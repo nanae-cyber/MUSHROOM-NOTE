@@ -54,15 +54,38 @@ async function identifyWithGemini(image: Blob): Promise<Candidate[]> {
       {
         parts: [
           {
-            text: "You are a mushroom identification assistant. Given an image, output top 3 likely species (Japanese common name if known, else scientific), each with confidence 0-1 and one-sentence rationale in Japanese. Return JSON array with fields: name, confidence, rationale. Keep it concise.",
+            text: `あなたは日本のきのこ識別の専門家です。画像を分析して、最も可能性の高いきのこの種類を3つ挙げてください。
+
+以下の形式でJSON配列として回答してください：
+[
+  {
+    "name": "日本語の一般名（学名）",
+    "confidence": 0.0〜1.0の信頼度,
+    "rationale": "判定理由（傘の色、形状、ひだの特徴など）"
+  }
+]
+
+重要な観察ポイント：
+- 傘の色、形状、大きさ
+- ひだ（管孔）の色と配置
+- 柄の特徴（中空/中実、つば、つぼの有無）
+- 生育環境（地面、木、倒木など）
+- 季節や地域の特徴
+
+必ずJSON配列のみを返してください。説明文は不要です。`,
           },
           { inline_data: { mime_type: "image/webp", data: b64 } },
         ],
       },
     ],
-    generationConfig: { temperature: 0.2 },
+    generationConfig: { 
+      temperature: 0.3,
+      topP: 0.8,
+      topK: 40,
+    },
   };
 
+  console.log("[AI] Sending request to Gemini API...");
   const resp = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
       KEY,
@@ -72,25 +95,44 @@ async function identifyWithGemini(image: Blob): Promise<Candidate[]> {
       body: JSON.stringify(body),
     }
   );
-  if (!resp.ok) throw new Error("HTTP " + resp.status);
+  
+  console.log("[AI] Response status:", resp.status);
+  
+  if (!resp.ok) {
+    const errorText = await resp.text();
+    console.error("[AI] API error response:", errorText);
+    throw new Error(`HTTP ${resp.status}: ${errorText}`);
+  }
+  
   const data = await resp.json();
+  console.log("[AI] API response data:", data);
 
   // レスポンスからJSONを抽出（モデルはしばしばテキストで返す）
   const text: string =
     data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("\n") ??
     "";
+  
+  console.log("[AI] Extracted text:", text);
+  
   // JSON 部分だけを頑張って取り出す
   const match = text.match(/\[[\s\S]*\]/);
   const json = match ? match[0] : text;
+  
+  console.log("[AI] Parsed JSON string:", json);
+  
   const arr = JSON.parse(json) as Candidate[];
+  
   // 安全のため整形
-  return arr
+  const result = arr
     .filter((x) => x && typeof x.name === "string")
     .map((x) => ({
       name: x.name,
       confidence: Number(x.confidence) || 0,
       rationale: x.rationale?.slice(0, 120),
     }));
+  
+  console.log("[AI] Final result:", result);
+  return result;
 }
 
 function mockIdentify(): Candidate[] {
@@ -115,9 +157,15 @@ function mockIdentify(): Candidate[] {
 
 export async function identifyMushroom(image: Blob): Promise<Candidate[]> {
   try {
-    return await identifyWithGemini(image);
+    console.log("[AI] Attempting Gemini API call...");
+    const result = await identifyWithGemini(image);
+    console.log("[AI] Gemini API success:", result);
+    return result;
   } catch (e) {
-    console.warn("[AI] fallback to mock because:", e);
+    console.error("[AI] Gemini API failed, fallback to mock:", e);
+    if (e instanceof Error) {
+      console.error("[AI] Error details:", e.message, e.stack);
+    }
     return mockIdentify();
   }
 }

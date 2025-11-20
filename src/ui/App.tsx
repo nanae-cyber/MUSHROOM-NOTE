@@ -443,6 +443,8 @@ export default function App() {
             marginTop: 24,
             fontSize: 12,
             opacity: 0.85,
+            padding: 12,
+            borderRadius: 12,
           }}
         >
           <div>

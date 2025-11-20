@@ -138,7 +138,7 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
   };
   const [gps, setGps] = useState<{
     lat: number;
-    lng: number;
+    lon: number;
     acc?: number;
     ts?: number;
   } | null>(null);
@@ -631,14 +631,14 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
                     gps
                       ? `位置情報更新: ${gps.lat.toFixed(
                           5
-                        )}, ${gps.lng.toFixed(5)}${
+                        )}, ${gps.lon.toFixed(5)}${
                           gps.acc ? ` ±${Math.round(gps.acc)}m` : ""
                         }`
                       : "現在地を記録"
                   }
                   title={
                     gps
-                      ? `${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}${
+                      ? `${gps.lat.toFixed(5)}, ${gps.lon.toFixed(5)}${
                           gps.acc ? ` ±${Math.round(gps.acc)}m` : ""
                         }`
                       : "現在地を記録"
@@ -661,7 +661,7 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
                           pos.coords;
                         setGps({
                           lat: latitude,
-                          lng: longitude,
+                          lon: longitude,
                           acc: accuracy,
                           ts: Date.now(),
                         });

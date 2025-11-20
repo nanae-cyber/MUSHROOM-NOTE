@@ -527,22 +527,15 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                 >
                   🗑️ アカウントを削除
                 </button>
-                <div style={{
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  fontSize: 12,
-                  color: '#991b1b',
-                  lineHeight: 1.5,
-                }}>
-                  ⚠️ アカウント削除は取り消せません。すべてのクラウドデータが削除されます。
-                </div>
               </div>
+            </div>
+          )}
 
-              {/* ローカルデータ削除 */}
-              <div style={{ marginTop: 16 }}>
-                <button
+          {/* ローカルデータ削除 */}
+          <div style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#ea580c' }}>データ削除</h3>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <button
                   onClick={async () => {
                     const confirmed = confirm(
                       '⚠️ 登録した全データを削除しますか？\n\n' +
@@ -606,21 +599,8 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                 >
                   🗑️ 登録した全データを削除
                 </button>
-                <div style={{
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  background: '#fff7ed',
-                  border: '1px solid #fed7aa',
-                  fontSize: 12,
-                  color: '#9a3412',
-                  lineHeight: 1.5,
-                  marginTop: 8,
-                }}>
-                  ⚠️ このデバイスに保存されたすべての観察データが削除されます。クラウドデータは削除されません。
-                </div>
-              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
       
