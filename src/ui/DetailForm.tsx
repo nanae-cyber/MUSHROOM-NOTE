@@ -120,6 +120,7 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
   const [terrainType, setTerrainType] = useState<string>("");
   const [terrainNote, setTerrainNote] = useState<string>("");
   const [showPhotoAddedModal, setShowPhotoAddedModal] = useState(false);
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const dtLocal = (d: Date) => {
     const pad = (n: number) => String(n).padStart(2, "0");
     const yyyy = d.getFullYear();
@@ -159,6 +160,13 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
         const meta = (cur?.meta as any) || {};
         setOriginalMeta(meta);
         setGps((meta as any).gps ?? null);
+        // 画像データを取得
+        if (cur?.photoBlob) {
+          console.log("🖼️ photoBlob取得:", cur.photoBlob.size, "bytes");
+          setPhotoBlob(cur.photoBlob);
+        } else {
+          console.log("⚠️ photoがありません");
+        }
         const t = (meta as any).terrain || {};
         const d = meta?.detail as Detail | undefined;
         if (d) {
@@ -174,10 +182,10 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
           setTerrainType(t.type || "");
           setTerrainNote(t.note || "");
         }
-        // Prefill occurrence fields (prefer occurAt > shotAt > createdAt)
+        // Prefill occurrence fields (prefer occurAt > capturedAt > shotAt > createdAt)
         const fallbackCreatedAt = Number(cur?.createdAt || 0);
         const occurAt = Number(
-          meta.occurAt || meta.shotAt || fallbackCreatedAt || 0
+          meta.occurAt || meta.capturedAt || meta.shotAt || fallbackCreatedAt || 0
         );
         if (Number.isFinite(occurAt) && occurAt > 0) {
           const dt = new Date(occurAt);
@@ -283,17 +291,10 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
       >
         <div
           style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 5,
             background: "#fff",
-            display: "flex",
-            alignItems: "center",
-            padding: 14,
             borderBottom: "1px solid var(--card-border)",
           }}
         >
-          <h3 style={{ margin: 0, fontSize: 18 }}>{t("specimen_details")}</h3>
           <input
             ref={galleryInputRef}
             type="file"
@@ -357,75 +358,170 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
               }
             }}
           />
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-            <button
-              className="icon-btn"
-              aria-label="ギャラリーから追加"
-              onClick={() => galleryInputRef.current?.click()}
-              disabled={addingPhoto || saving || loading}
-              title="ギャラリーから追加"
+          
+          {/* 閉じるボタン（右上） */}
+          <button
+            onClick={onClose}
+            disabled={saving}
+            aria-label="閉じる"
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              background: "rgba(0,0,0,0.5)",
+              border: "none",
+              borderRadius: "50%",
+              width: 28,
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              padding: 0,
+              zIndex: 10,
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <span className="icon" aria-hidden>
-                <svg
-                  viewBox="0 0 24 24"
-                  width="22"
-                  height="22"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+
+          {/* 画像とテキストを中央に配置 */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: "20px 14px 14px",
+              gap: 12,
+            }}
+          >
+            {/* 画像表示（画像追加ボタン付き） */}
+            {photoBlob && (
+              <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    border: "3px solid #e5e7eb",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }}
                 >
-                  <rect x="3" y="4.5" width="18" height="15" rx="2" />
-                  <path d="m7 13 3-3 3 3 3-3 3 3" />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="icon-btn"
-              aria-label="カメラで撮影"
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={addingPhoto || saving || loading}
-              title="カメラで撮影"
-            >
-              <span className="icon" aria-hidden>
-                <svg
-                  viewBox="0 0 24 24"
-                  width="22"
-                  height="22"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  <img
+                    src={URL.createObjectURL(photoBlob)}
+                    alt="編集中の画像"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+                
+                {/* 画像追加ボタン（画像の右下） */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: -12,
+                    right: -12,
+                    display: "flex",
+                    gap: 6,
+                    background: "#fff",
+                    borderRadius: 20,
+                    padding: "4px 6px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  }}
                 >
-                  <path d="M4 8h4l2-3h4l2 3h4a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z" />
-                  <circle cx="12" cy="14" r="3.5" />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="icon-btn"
-              aria-label="閉じる"
-              onClick={onClose}
-              disabled={saving}
-              title="閉じる"
-            >
-              <span className="icon" aria-hidden>
-                <svg
-                  viewBox="0 0 24 24"
-                  width="22"
-                  height="22"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M6 6l12 12M18 6 6 18" />
-                </svg>
-              </span>
-            </button>
+                  <button
+                    onClick={() => galleryInputRef.current?.click()}
+                    disabled={addingPhoto || saving || loading}
+                    aria-label="ギャラリーから追加"
+                    title="ギャラリーから追加"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      borderRadius: "50%",
+                      padding: 6,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      width: 28,
+                      height: 28,
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="#666"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="4.5" width="18" height="15" rx="2" />
+                      <path d="m7 13 3-3 3 3 3-3 3 3" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => cameraInputRef.current?.click()}
+                    disabled={addingPhoto || saving || loading}
+                    aria-label="カメラで撮影"
+                    title="カメラで撮影"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      borderRadius: "50%",
+                      padding: 6,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      width: 28,
+                      height: 28,
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="#666"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M4 8h4l2-3h4l2 3h4a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z" />
+                      <circle cx="12" cy="14" r="3.5" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {/* タイトルとサブテキスト */}
+            <div style={{ textAlign: "center" }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+                {t("specimen_details")}
+              </h3>
+              {photoBlob && (
+                <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+                  この画像の詳細を編集中
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

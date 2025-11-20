@@ -1,8 +1,10 @@
 import React from "react";
 import { PAID_AI_LINK } from "../config";
 import { t } from "../i18n";
+import { LoginModal } from "./LoginModal";
 
 export function Paywall({ onClose }: { onClose: () => void }) {
+  const [showLogin, setShowLogin] = React.useState(false);
   const [selectedPlan, setSelectedPlan] = React.useState<"monthly" | "annual">("monthly");
   
   // プレミアム会員かどうかを確認
@@ -24,8 +26,10 @@ export function Paywall({ onClose }: { onClose: () => void }) {
       const plan = selectedPlan === "annual" ? "plus" : "true";
       localStorage.setItem("premium", plan);
       const planName = selectedPlan === "annual" ? "プレミアムプラス" : "プレミアム";
-      alert(`${planName}プランに登録しました！`);
-      window.location.reload();
+      
+      // アカウント作成画面に進む
+      onClose();
+      setShowLogin(true);
     } catch (err) {
       console.error("Failed to set premium:", err);
     }
@@ -370,6 +374,18 @@ export function Paywall({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
+      
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onSuccess={() => {
+            setShowLogin(false);
+            const planName = selectedPlan === "annual" ? "プレミアムプラス" : "プレミアム";
+            alert(`${planName}プランに登録しました！`);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

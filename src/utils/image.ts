@@ -1,6 +1,15 @@
 // src/utils/image.ts
 // HEIC/HEIF を heic2any で JPEG 化し、長辺 maxSize へリサイズして返す
 import heic2any from "heic2any";
+import exifr from "exifr";
+
+export interface ExifData {
+  dateTime?: Date;
+  gps?: {
+    lat: number;
+    lon: number;
+  };
+}
 
 /** 入力画像を JPEG Blob に統一して返す（HEIC/PNG等にも対応） */
 export async function normalizeImageToJpeg(
@@ -83,4 +92,41 @@ function fit(w: number, h: number, max: number) {
   if (Math.max(w, h) <= max) return { w, h };
   const r = w > h ? max / w : max / h;
   return { w: Math.round(w * r), h: Math.round(h * r) };
+}
+
+
+/**
+ * 画像からEXIF情報を抽出
+ */
+export async function extractExifData(blob: Blob): Promise<ExifData> {
+  try {
+    const exif = await exifr.parse(blob, {
+      pick: ['DateTimeOriginal', 'CreateDate', 'ModifyDate', 'latitude', 'longitude'],
+    });
+    
+    if (!exif) {
+      return {};
+    }
+    
+    const result: ExifData = {};
+    
+    // 撮影日時を取得（優先順位: DateTimeOriginal > CreateDate > ModifyDate）
+    const dateTime = exif.DateTimeOriginal || exif.CreateDate || exif.ModifyDate;
+    if (dateTime instanceof Date) {
+      result.dateTime = dateTime;
+    }
+    
+    // GPS座標を取得
+    if (exif.latitude && exif.longitude) {
+      result.gps = {
+        lat: exif.latitude,
+        lon: exif.longitude,
+      };
+    }
+    
+    return result;
+  } catch (err) {
+    console.warn('[EXIF] Failed to extract EXIF data:', err);
+    return {};
+  }
 }

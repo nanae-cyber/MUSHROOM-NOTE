@@ -95,11 +95,24 @@ export default function App() {
     const handleNavigateToForecast = () => {
       setView('forecast');
     };
+    const handleOpenDetailForm = (e: CustomEvent) => {
+      const id = e.detail?.id;
+      if (id) {
+        setView('zukan');
+        // ZukanViewで該当の記録を開く
+        setTimeout(() => {
+          const event = new CustomEvent('open-record-detail', { detail: { id } });
+          window.dispatchEvent(event);
+        }, 100);
+      }
+    };
     window.addEventListener('navigate-to-stats', handleNavigateToStats);
     window.addEventListener('navigate-to-forecast', handleNavigateToForecast);
+    window.addEventListener('open-detail-form', handleOpenDetailForm as any);
     return () => {
       window.removeEventListener('navigate-to-stats', handleNavigateToStats);
       window.removeEventListener('navigate-to-forecast', handleNavigateToForecast);
+      window.removeEventListener('open-detail-form', handleOpenDetailForm as any);
     };
   }, []);
 
@@ -2070,10 +2083,10 @@ function MapView() {
       setItems(list);
       
       // 位置情報がある最初のアイテムを中心に設定
-      const firstWithLocation = list.find((it: any) => it.meta?.lat && it.meta?.lon);
+      const firstWithLocation = list.find((it: any) => it.meta?.gps?.lat && it.meta?.gps?.lon);
       if (firstWithLocation) {
-        const meta = (firstWithLocation as any).meta;
-        setCenter({ lat: meta.lat, lng: meta.lon });
+        const gps = (firstWithLocation as any).meta.gps;
+        setCenter({ lat: gps.lat, lng: gps.lon });
       } else {
         // デフォルト位置（日本の中心付近）
         setCenter({ lat: 36.5, lng: 138.0 });
@@ -2089,7 +2102,7 @@ function MapView() {
 
   // 位置情報があるアイテムのみフィルタ
   const itemsWithLocation = React.useMemo(() => {
-    return items.filter((it: any) => it.meta?.lat && it.meta?.lon);
+    return items.filter((it: any) => it.meta?.gps?.lat && it.meta?.gps?.lon);
   }, [items]);
 
   // Leaflet地図の初期化
@@ -2176,10 +2189,10 @@ function MapView() {
 
     // 新しいマーカーを追加
     itemsWithLocation.forEach((it: any) => {
-      const meta = it.meta;
-      const name = meta?.detail?.mushroomName || "名前未登録";
+      const gps = it.meta.gps;
+      const name = it.meta?.detail?.mushroomName || "名前未登録";
       
-      const marker = L.marker([meta.lat, meta.lon], {
+      const marker = L.marker([gps.lat, gps.lon], {
         icon: L.divIcon({
           className: 'custom-marker',
           html: `<div style="
@@ -2213,7 +2226,7 @@ function MapView() {
     // 全マーカーが見えるように調整
     if (itemsWithLocation.length > 1) {
       const bounds = L.latLngBounds(
-        itemsWithLocation.map((it: any) => [it.meta.lat, it.meta.lon])
+        itemsWithLocation.map((it: any) => [it.meta.gps.lat, it.meta.gps.lon])
       );
       mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
     }

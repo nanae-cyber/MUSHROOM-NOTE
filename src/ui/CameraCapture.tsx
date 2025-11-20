@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { add } from "../utils/db";
-import { normalizeImageToJpeg } from "../utils/image";
+import { normalizeImageToJpeg, extractExifData } from "../utils/image";
 
 type SourceType = "camera" | "library";
 
@@ -62,6 +62,8 @@ export default function CameraCapture({ mode }: { mode?: "camera" | "album" | nu
   const camRef = useRef<HTMLInputElement>(null);
   const libRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   useEffect(() => {
     const open = () => libRef.current?.click();
@@ -129,22 +131,38 @@ export default function CameraCapture({ mode }: { mode?: "camera" | "album" | nu
         } catch {}
       }
 
-      // ② 位置・方位（取れなくても続行）
+      // ② EXIF情報を抽出
+      const exifData = await extractExifData(file);
+      console.log("📸 EXIF data:", exifData);
+
+      // ③ 位置・方位（取れなくても続行）
       const [pos, heading] = await Promise.all([
         getPosition(),
         getHeading(),
       ]);
-      const { lat, lon } = pos as any;
+      
+      // EXIF GPSがあればそれを優先、なければ現在位置
+      const gps = exifData.gps || (pos as any);
+      
+      // EXIF撮影日時があればそれを使用、なければ現在時刻
+      const capturedAt = exifData.dateTime ? exifData.dateTime.getTime() : Date.now();
 
-      // ③ 保存（★firstPhoto は jpeg を渡す）
-      await add({
+      // ④ 保存（★firstPhoto は jpeg を渡す）
+      const id = await add({
         firstPhoto: jpeg,
         view: "cap",
-        meta: { lat, lon, heading, capturedAt: Date.now(), source },
+        meta: { 
+          gps: gps.lat && gps.lon ? { lat: gps.lat, lon: gps.lon } : undefined,
+          heading, 
+          capturedAt, 
+          source 
+        },
       });
 
-      // ④ 一覧反映（最短）
-      location.reload();
+      // ⑤ 成功モーダルを表示
+      setSavedId(id);
+      setShowSuccessModal(true);
+      setBusy(false);
     } catch (e: any) {
       const name = e?.name ?? "Error";
       const msg = e?.message ?? String(e);
@@ -178,14 +196,20 @@ export default function CameraCapture({ mode }: { mode?: "camera" | "album" | nu
         }}
       />
 
-      {/* アルバム（常にギャラリー/ファイル選択を開く） */}
+      {/* アルバム（複数選択可能） */}
       <input
         ref={libRef}
         type="file"
         accept="image/*"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handlePick(f, "library");
+        multiple
+        onChange={async (e) => {
+          const files = Array.from(e.target.files || []);
+          if (files.length === 0) return;
+          
+          // 複数ファイルを順番に処理
+          for (const f of files) {
+            await handlePick(f, "library");
+          }
         }}
         style={{ 
           position: "absolute",
@@ -211,6 +235,80 @@ export default function CameraCapture({ mode }: { mode?: "camera" | "album" | nu
           fontWeight: 600,
         }}>
           保存中…
+        </div>
+      )}
+      
+      {/* 登録成功モーダル */}
+      {showSuccessModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "grid",
+            placeItems: "center",
+            padding: 16,
+            zIndex: 1001,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              maxWidth: 400,
+              width: "100%",
+              padding: 32,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+            <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+              登録完了！
+            </div>
+            <div style={{ fontSize: 14, color: "#666", marginBottom: 24 }}>
+              きのこの記録を保存しました
+            </div>
+            <div style={{ display: "grid", gap: 12 }}>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  location.reload();
+                }}
+                style={{
+                  padding: "14px 24px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  color: "#fff",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                📖 図鑑に戻る
+              </button>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  // DetailFormを開く（App.tsxのイベントを発火）
+                  const event = new CustomEvent('open-detail-form', { detail: { id: savedId } });
+                  window.dispatchEvent(event);
+                }}
+                style={{
+                  padding: "14px 24px",
+                  borderRadius: 12,
+                  border: "1px solid #ddd",
+                  background: "#fff",
+                  color: "#333",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                ⚙️ 詳細設定に行く
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

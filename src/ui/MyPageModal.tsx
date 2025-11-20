@@ -2,6 +2,7 @@
 import React from 'react';
 import { supabase } from '../utils/supabase';
 import { LoginModal } from './LoginModal';
+import { t } from '../i18n';
 
 interface MyPageModalProps {
   onClose: () => void;
@@ -102,7 +103,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
             ✕
           </button>
           <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
-            マイページ
+            {t('my_page')}
           </div>
           {isLoggedIn && userEmail && (
             <div style={{ fontSize: 14, opacity: 0.9 }}>
@@ -536,6 +537,86 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                   lineHeight: 1.5,
                 }}>
                   ⚠️ アカウント削除は取り消せません。すべてのクラウドデータが削除されます。
+                </div>
+              </div>
+
+              {/* ローカルデータ削除 */}
+              <div style={{ marginTop: 16 }}>
+                <button
+                  onClick={async () => {
+                    const confirmed = confirm(
+                      '⚠️ 登録した全データを削除しますか？\n\n' +
+                      'この操作は取り消せません。以下のデータがすべて削除されます：\n' +
+                      '・このデバイスに保存された観察データ\n' +
+                      '・画像データ\n' +
+                      '・詳細情報\n\n' +
+                      '※クラウドに同期されたデータは削除されません。\n' +
+                      '※アカウント情報は削除されません。'
+                    );
+
+                    if (!confirmed) return;
+
+                    const doubleConfirm = confirm(
+                      '本当にすべてのローカルデータを削除しますか？\n\n' +
+                      'この操作は取り消せません。\n' +
+                      '「OK」を押すと、すべてのデータが削除されます。'
+                    );
+
+                    if (!doubleConfirm) return;
+
+                    try {
+                      // IndexedDBを削除
+                      const dbName = 'mushroom-note';
+                      const deleteRequest = indexedDB.deleteDatabase(dbName);
+                      
+                      deleteRequest.onsuccess = () => {
+                        alert(
+                          'すべてのローカルデータを削除しました。\n\n' +
+                          'ページをリロードします。'
+                        );
+                        window.location.reload();
+                      };
+
+                      deleteRequest.onerror = () => {
+                        alert('データの削除に失敗しました。');
+                      };
+
+                      deleteRequest.onblocked = () => {
+                        alert(
+                          'データベースが使用中のため削除できません。\n' +
+                          'すべてのタブを閉じてから再度お試しください。'
+                        );
+                      };
+                    } catch (err: any) {
+                      console.error('データ削除エラー:', err);
+                      alert('データ削除に失敗しました: ' + (err?.message || String(err)));
+                    }
+                  }}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    border: '1px solid #ea580c',
+                    background: '#fff',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    color: '#ea580c',
+                    width: '100%',
+                  }}
+                >
+                  🗑️ 登録した全データを削除
+                </button>
+                <div style={{
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  background: '#fff7ed',
+                  border: '1px solid #fed7aa',
+                  fontSize: 12,
+                  color: '#9a3412',
+                  lineHeight: 1.5,
+                  marginTop: 8,
+                }}>
+                  ⚠️ このデバイスに保存されたすべての観察データが削除されます。クラウドデータは削除されません。
                 </div>
               </div>
             </div>

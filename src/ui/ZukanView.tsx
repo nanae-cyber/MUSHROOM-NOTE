@@ -16,6 +16,8 @@ export function ZukanView() {
   const [showAIPredict, setShowAIPredict] = React.useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = React.useState(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [showMapModal, setShowMapModal] = React.useState(false);
+  const [mapGPS, setMapGPS] = React.useState<{ lat: number; lon: number } | null>(null);
   const [sort, setSort] = React.useState<"newest" | "oldest" | "name">(() => {
     const v = localStorage.getItem("zukan.sort");
     return (v as any) || "newest";
@@ -35,6 +37,18 @@ export function ZukanView() {
   };
   React.useEffect(() => {
     reload();
+    
+    // 詳細を開くイベントを処理
+    const handleOpenRecordDetail = (e: CustomEvent) => {
+      const id = e.detail?.id;
+      if (id) {
+        setEditId(id);
+      }
+    };
+    window.addEventListener('open-record-detail', handleOpenRecordDetail as any);
+    return () => {
+      window.removeEventListener('open-record-detail', handleOpenRecordDetail as any);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -563,6 +577,21 @@ export function ZukanView() {
                     if (d.terrainNote) terrainItems.push({ label: t("memo"), value: d.terrainNote });
                     if (terrainItems.length) sections.push({ title: t("terrain"), items: terrainItems });
                     
+                    // GPS情報
+                    const gps = (previewRow as any).meta?.gps;
+                    if (gps?.lat && gps?.lon) {
+                      sections.push({
+                        title: "📍 GPS情報",
+                        items: [
+                          { 
+                            label: "座標", 
+                            value: `${gps.lat.toFixed(6)}, ${gps.lon.toFixed(6)}`,
+                            memo: "map-link"
+                          }
+                        ],
+                      });
+                    }
+                    
                     // AI判定結果
                     const aiData = (previewRow as any).meta?.ai;
                     if (aiData && aiData.candidates && aiData.candidates.length > 0) {
@@ -694,6 +723,28 @@ export function ZukanView() {
                                           {t("weird_shape_mushroom")}
                                         </span>
                                       </div>
+                                    ) : item.memo === "map-link" ? (
+                                      <button
+                                        onClick={() => {
+                                          const gps = (previewRow as any).meta?.gps;
+                                          if (gps?.lat && gps?.lon) {
+                                            setMapGPS({ lat: gps.lat, lon: gps.lon });
+                                            setShowMapModal(true);
+                                          }
+                                        }}
+                                        style={{
+                                          fontWeight: 600,
+                                          fontSize: 14,
+                                          color: '#667eea',
+                                          background: 'none',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          textDecoration: 'underline',
+                                          padding: 0,
+                                        }}
+                                      >
+                                        {item.value} 📍
+                                      </button>
                                     ) : (
                                       <div style={{ 
                                         fontWeight: item.label ? 400 : 600,
@@ -920,6 +971,83 @@ export function ZukanView() {
           id={previewId}
           onClose={() => setShowAIPredict(false)}
         />
+      )}
+      
+      {/* 地図モーダル */}
+      {showMapModal && mapGPS && (
+        <div
+          onClick={() => setShowMapModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'grid',
+            placeItems: 'center',
+            padding: 16,
+            zIndex: 200,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              maxWidth: 600,
+              width: '100%',
+              maxHeight: '80vh',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>📍 観察地点</h3>
+              <button
+                onClick={() => setShowMapModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                  color: '#666',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <div style={{ marginBottom: 12, fontSize: 14, color: '#666' }}>
+                座標: {mapGPS.lat.toFixed(6)}, {mapGPS.lon.toFixed(6)}
+              </div>
+              <iframe
+                width="100%"
+                height="400"
+                style={{ border: 0, borderRadius: 8 }}
+                loading="lazy"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapGPS.lon-0.01},${mapGPS.lat-0.01},${mapGPS.lon+0.01},${mapGPS.lat+0.01}&layer=mapnik&marker=${mapGPS.lat},${mapGPS.lon}`}
+              />
+              <div style={{ marginTop: 12, textAlign: 'center' }}>
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${mapGPS.lat}&mlon=${mapGPS.lon}#map=15/${mapGPS.lat}/${mapGPS.lon}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#667eea',
+                    textDecoration: 'none',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  OpenStreetMapで開く →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

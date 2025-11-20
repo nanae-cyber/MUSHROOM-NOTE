@@ -4,16 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>プラン比較 | MUSHROOM NOTE</title>
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-YLXB6554S8"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-YLXB6554S8');
-</script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@600;700&display=swap" rel="stylesheet" />
@@ -161,82 +151,6 @@ th {
 .center {
   text-align: center;
 }
-/* モバイル版比較表 */
-.mobile-comparison {
-  display: none;
-}
-.mobile-plan-card {
-  background: #fff;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-.mobile-plan-card.premium {
-  border-color: #fbbf24;
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%);
-}
-.mobile-plan-card.premium-plus {
-  border-color: #8b5cf6;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%);
-}
-.mobile-plan-card h3 {
-  margin: 0 0 8px;
-  font-size: 20px;
-  font-weight: 700;
-}
-.mobile-plan-price {
-  font-size: 24px;
-  font-weight: 700;
-  color: #667eea;
-  margin-bottom: 16px;
-}
-.mobile-plan-card.premium .mobile-plan-price {
-  color: #f59e0b;
-}
-.mobile-plan-card.premium-plus .mobile-plan-price {
-  color: #8b5cf6;
-}
-.mobile-features {
-  display: grid;
-  gap: 12px;
-}
-.mobile-feature {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
-}
-.feature-name {
-  font-size: 14px;
-  font-weight: 500;
-}
-.feature-value {
-  font-size: 14px;
-  font-weight: 600;
-}
-.feature-value.highlight {
-  color: #667eea;
-}
-.mobile-plan-card.premium .feature-value.highlight {
-  color: #f59e0b;
-}
-.mobile-plan-card.premium-plus .feature-value.highlight {
-  color: #8b5cf6;
-}
-.desktop-comparison {
-  display: table;
-}
-@media (max-width: 768px) {
-  .mobile-comparison {
-    display: block;
-  }
-  .desktop-comparison {
-    display: none;
-  }
-}
 </style>
 </head>
 <body>
@@ -295,105 +209,7 @@ th {
 
 <div class="comparison">
   <h2>詳細比較表</h2>
-  
-  <!-- モバイル版：カード形式 -->
-  <div class="mobile-comparison">
-    <div class="mobile-plan-card">
-      <h3>無料プラン</h3>
-      <div class="mobile-plan-price">¥0</div>
-      <div class="mobile-features">
-        <div class="mobile-feature">
-          <span class="feature-name">写真撮影・保存</span>
-          <span class="feature-value">✓ 無制限</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">オフライン動作</span>
-          <span class="feature-value">✓</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">クラウド同期</span>
-          <span class="feature-value">✗</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">AI推定回数</span>
-          <span class="feature-value">月5回</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">詳細な統計表示</span>
-          <span class="feature-value">✗</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">きのこ予報</span>
-          <span class="feature-value">✗</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="mobile-plan-card premium">
-      <h3>⭐ プレミアム</h3>
-      <div class="mobile-plan-price">¥200/月</div>
-      <div class="mobile-features">
-        <div class="mobile-feature">
-          <span class="feature-name">写真撮影・保存</span>
-          <span class="feature-value">✓ 無制限</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">オフライン動作</span>
-          <span class="feature-value">✓</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">クラウド同期</span>
-          <span class="feature-value highlight">✓ 最大100枚/月</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">AI推定回数</span>
-          <span class="feature-value highlight">月30回</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">詳細な統計表示</span>
-          <span class="feature-value">✗</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">きのこ予報</span>
-          <span class="feature-value">✗</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="mobile-plan-card premium-plus">
-      <h3>💎 プレミアムプラス</h3>
-      <div class="mobile-plan-price">¥500/月</div>
-      <div class="mobile-features">
-        <div class="mobile-feature">
-          <span class="feature-name">写真撮影・保存</span>
-          <span class="feature-value">✓ 無制限</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">オフライン動作</span>
-          <span class="feature-value">✓</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">クラウド同期</span>
-          <span class="feature-value highlight">✓ 最大1,000枚/月</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">AI推定回数</span>
-          <span class="feature-value highlight">無制限</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">詳細な統計表示</span>
-          <span class="feature-value highlight">✓</span>
-        </div>
-        <div class="mobile-feature">
-          <span class="feature-name">きのこ予報</span>
-          <span class="feature-value highlight">✓</span>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- デスクトップ版：テーブル -->
-  <table class="desktop-comparison">
+  <table>
     <thead>
       <tr>
         <th>機能</th>
@@ -443,7 +259,7 @@ th {
         <td><strong>クラウド同期</strong><br><span style="font-size: 12px; opacity: 0.8;">機種変更時もデータを引き継げます</span></td>
         <td class="center">✗</td>
         <td class="center" style="color: #f59e0b; font-weight: 600;">✓</td>
-        <td class="center" style="color: #8b5cf6; font-weight: 600;">✓</td>
+        <td class="center" style="color: #8b5cf6; font-weight: 600;">✓ 無制限</td>
       </tr>
       <tr style="background: rgba(251, 191, 36, 0.05);">
         <td><strong>複数デバイス間の同期</strong></td>
