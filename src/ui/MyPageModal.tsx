@@ -536,7 +536,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#ea580c' }}>データ削除</h3>
             <div style={{ display: 'grid', gap: 8 }}>
               <button
-                  onClick={async () => {
+                onClick={async () => {
                     const confirmed = confirm(
                       '⚠️ 登録した全データを削除しますか？\n\n' +
                       'この操作は取り消せません。以下のデータがすべて削除されます：\n' +
@@ -585,20 +585,20 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                       alert('データ削除に失敗しました: ' + (err?.message || String(err)));
                     }
                   }}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 8,
-                    border: '1px solid #ea580c',
-                    background: '#fff',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    color: '#ea580c',
-                    width: '100%',
-                  }}
-                >
-                  🗑️ 登録した全データを削除
-                </button>
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #ea580c',
+                  background: '#fff',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  color: '#ea580c',
+                  width: '100%',
+                }}
+              >
+                🗑️ 登録した全データを削除
+              </button>
             </div>
           </div>
         </div>

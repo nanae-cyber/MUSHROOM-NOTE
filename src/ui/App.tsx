@@ -2158,6 +2158,33 @@ function MapView() {
 
       mapInstanceRef.current = map;
       
+      // 現在地へ戻るボタンを追加
+      const recenterButton = L.control({ position: 'topright' });
+      recenterButton.onAdd = function() {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        div.innerHTML = `
+          <a href="#" style="
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+          " title="現在地へ戻る">📍</a>
+        `;
+        div.onclick = (e: Event) => {
+          e.preventDefault();
+          if (mapInstanceRef.current && center) {
+            mapInstanceRef.current.setView([center.lat, center.lng], 13);
+          }
+        };
+        return div;
+      };
+      recenterButton.addTo(map);
+      
       // 地図のサイズを調整
       setTimeout(() => {
         if (mapInstanceRef.current) {

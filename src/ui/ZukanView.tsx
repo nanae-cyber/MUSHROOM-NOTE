@@ -253,6 +253,7 @@ export function ZukanView() {
                       objectFit: "cover",
                     }}
                     loading="lazy"
+                    decoding="async"
                   />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>

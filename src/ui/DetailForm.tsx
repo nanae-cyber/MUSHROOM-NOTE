@@ -92,6 +92,26 @@ const labelJP = (v?: string) => {
   return map[v ?? ""] ?? v ?? "";
 };
 
+// ひらがな・カタカナ変換関数
+const toHiragana = (str: string): string => {
+  return str.replace(/[\u30a1-\u30f6]/g, (match) => {
+    const chr = match.charCodeAt(0) - 0x60;
+    return String.fromCharCode(chr);
+  });
+};
+
+const toKatakana = (str: string): string => {
+  return str.replace(/[\u3041-\u3096]/g, (match) => {
+    const chr = match.charCodeAt(0) + 0x60;
+    return String.fromCharCode(chr);
+  });
+};
+
+// 検索用の正規化（ひらがな・カタカナ・大文字小文字を統一）
+const normalizeForSearch = (str: string): string => {
+  return toHiragana(str.toLowerCase());
+};
+
 export function DetailForm({ id, onSaved, onClose }: Props) {
   const [detail, setDetail] = useState<Detail>({});
   const [loading, setLoading] = useState(true);
@@ -121,6 +141,8 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
   const [terrainNote, setTerrainNote] = useState<string>("");
   const [showPhotoAddedModal, setShowPhotoAddedModal] = useState(false);
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
+  const [mushroomSuggestions, setMushroomSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const dtLocal = (d: Date) => {
     const pad = (n: number) => String(n).padStart(2, "0");
     const yyyy = d.getFullYear();
@@ -206,6 +228,17 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
           )}-${String(dt.getDate()).padStart(2, "0")}`;
           setInputAtIso(iso);
         }
+        
+        // 過去に入力したきのこの名前を取得
+        const allRecords = await db.list();
+        const names = new Set<string>();
+        allRecords.forEach((record) => {
+          const name = (record.meta as any)?.detail?.mushroomName;
+          if (name && typeof name === 'string' && name.trim()) {
+            names.add(name.trim());
+          }
+        });
+        setMushroomSuggestions(Array.from(names).sort());
       } catch (err) {
         console.error("ロード中にエラー:", err);
       } finally {
@@ -406,7 +439,7 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
             }}
           >
             {/* 画像表示（画像追加ボタン付き） */}
-            {photoBlob && (
+            {(photoBlob || loading) && (
               <div style={{ position: "relative" }}>
                 <div
                   style={{
@@ -416,17 +449,25 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
                     overflow: "hidden",
                     border: "3px solid #e5e7eb",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    background: loading ? "#f0f0f0" : "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  <img
-                    src={URL.createObjectURL(photoBlob)}
-                    alt="編集中の画像"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
+                  {loading ? (
+                    <div style={{ fontSize: 12, color: "#999" }}>読み込み中...</div>
+                  ) : photoBlob ? (
+                    <img
+                      src={URL.createObjectURL(photoBlob)}
+                      alt="編集中の画像"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : null}
                 </div>
                 
                 {/* 画像追加ボタン（画像の右下） */}
@@ -776,13 +817,24 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
                     {t("ai_prediction")}
                   </button>
                 </div>
-                <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ display: "grid", gap: 8, position: "relative" }}>
                   <input
                     type="text"
                     value={detail.mushroomName ?? ""}
-                    onChange={(e) =>
-                      pick("mushroomName", e.target.value as any)
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      pick("mushroomName", value as any);
+                      setShowSuggestions(value.length > 0);
+                    }}
+                    onFocus={() => {
+                      if ((detail.mushroomName ?? "").length > 0) {
+                        setShowSuggestions(true);
+                      }
+                    }}
+                    onBlur={() => {
+                      // 少し遅延させてクリックイベントを処理できるようにする
+                      setTimeout(() => setShowSuggestions(false), 200);
+                    }}
                     placeholder={t("mushroom_name_placeholder")}
                     style={{
                       width: "100%",
@@ -793,6 +845,76 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
                       background: "#fff",
                     }}
                   />
+                  {/* オートコンプリート候補 */}
+                  {showSuggestions && (detail.mushroomName ?? "").length > 0 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        background: "#fff",
+                        border: "1px solid var(--card-border)",
+                        borderRadius: 8,
+                        marginTop: 4,
+                        maxHeight: 200,
+                        overflowY: "auto",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        zIndex: 10,
+                      }}
+                    >
+                      {mushroomSuggestions
+                        .filter((name) => {
+                          const normalizedName = normalizeForSearch(name);
+                          const normalizedInput = normalizeForSearch(detail.mushroomName ?? "");
+                          return normalizedName.includes(normalizedInput);
+                        })
+                        .map((name) => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => {
+                              pick("mushroomName", name as any);
+                              setShowSuggestions(false);
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "10px 12px",
+                              textAlign: "left",
+                              border: "none",
+                              background: "transparent",
+                              cursor: "pointer",
+                              fontSize: 14,
+                              borderBottom: "1px solid #f0f0f0",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "#f9fafb";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                            }}
+                          >
+                            {name}
+                          </button>
+                        ))}
+                      {mushroomSuggestions.filter((name) => {
+                        const normalizedName = normalizeForSearch(name);
+                        const normalizedInput = normalizeForSearch(detail.mushroomName ?? "");
+                        return normalizedName.includes(normalizedInput);
+                      }).length === 0 && (
+                        <div
+                          style={{
+                            padding: "10px 12px",
+                            fontSize: 13,
+                            color: "#999",
+                            textAlign: "center",
+                          }}
+                        >
+                          候補なし
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -975,11 +1097,12 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
               background: "#fff",
               color: "var(--fg)",
               width: "min(420px, 92vw)",
-              maxHeight: "calc(100vh - 80px)",
+              maxHeight: "85vh",
               borderRadius: 12,
               boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
               display: "flex",
               flexDirection: "column",
+              overflow: "hidden",
             }}
           >
             <div style={{ 
