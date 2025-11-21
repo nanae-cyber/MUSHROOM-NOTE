@@ -1155,10 +1155,11 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
             <div style={{ 
               padding: 16,
               overflowY: "auto",
-              flex: 1,
+              flex: showYearPicker ? 0 : 1,
+              minHeight: showYearPicker ? 'auto' : 0,
             }}>
             {showYearPicker ? (
-              <div style={{ display: "grid", gap: 10 }}>
+              <div>
                 {(() => {
                   const base = tempDate || dtLocal(new Date()).slice(0, 10);
                   const d = new Date(base + "T" + (tempTime || "00:00"));
@@ -1177,35 +1178,45 @@ export function DetailForm({ id, onSaved, onClose }: Props) {
                     setOccurError(validateOccur(v, tempTime));
                   };
                   return (
-                    <div className="card" style={{ padding: 12 }}>
+                    <div>
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 8,
+                          justifyContent: "center",
+                          gap: 12,
+                          marginBottom: 12,
                         }}
                       >
                         <button
                           className="btn-outline"
                           onClick={() => applyYear(y - 1)}
                           aria-label="前年"
+                          style={{ padding: "8px 16px" }}
                         >
                           ←
                         </button>
-                        <div style={{ fontWeight: 700 }}>{y}年</div>
+                        <div style={{ fontWeight: 700, fontSize: 18 }}>{y}年</div>
                         <button
                           className="btn-outline"
                           onClick={() => applyYear(y + 1)}
                           aria-label="翌年"
+                          style={{ padding: "8px 16px" }}
                         >
                           →
                         </button>
                       </div>
                       <div
-                        style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}
+                        style={{ 
+                          fontSize: 14, 
+                          opacity: 0.75, 
+                          textAlign: "center",
+                          padding: "12px",
+                          background: "#f9fafb",
+                          borderRadius: 8,
+                        }}
                       >
-                        月日: {String(m + 1).padStart(2, "0")}/
-                        {String(dd).padStart(2, "0")}
+                        選択中: {String(m + 1).padStart(2, "0")}月{String(dd).padStart(2, "0")}日
                       </div>
                     </div>
                   );

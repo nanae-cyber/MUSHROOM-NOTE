@@ -2075,9 +2075,48 @@ function MapView() {
   const [loading, setLoading] = React.useState(true);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [center, setCenter] = React.useState<{ lat: number; lng: number } | null>(null);
+  const [selectedArea, setSelectedArea] = React.useState<string>('all');
+  const [mapType, setMapType] = React.useState<string>('std');
   const mapRef = React.useRef<HTMLDivElement>(null);
   const mapInstanceRef = React.useRef<any>(null);
   const markersRef = React.useRef<any[]>([]);
+  const tileLayerRef = React.useRef<any>(null);
+
+  // 地図タイルの定義
+  const mapTiles = {
+    std: {
+      name: '標準地図',
+      url: 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
+      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
+    },
+    pale: {
+      name: '淡色地図',
+      url: 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
+      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
+    },
+    seamlessphoto: {
+      name: '写真',
+      url: 'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
+      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
+    },
+    relief: {
+      name: '色別標高図',
+      url: 'https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png',
+      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
+    },
+  };
+
+  // エリア分類関数（緯度経度から地域を判定）
+  const getArea = (lat: number, lon: number): string => {
+    if (lat >= 43) return '北海道';
+    if (lat >= 40) return '東北';
+    if (lat >= 36 && lon <= 139) return '関東';
+    if (lat >= 35 && lon <= 137) return '中部';
+    if (lat >= 34 && lon <= 136) return '近畿';
+    if (lat >= 33 && lon <= 134) return '中国';
+    if (lat >= 32 && lon <= 133) return '四国';
+    return '九州・沖縄';
+  };
 
   const reload = async () => {
     try {
@@ -2104,7 +2143,40 @@ function MapView() {
 
   // 位置情報があるアイテムのみフィルタ
   const itemsWithLocation = React.useMemo(() => {
-    return items.filter((it: any) => it.meta?.gps?.lat && it.meta?.gps?.lon);
+    const withGps = items.filter((it: any) => it.meta?.gps?.lat && it.meta?.gps?.lon);
+    
+    // エリアフィルター適用
+    if (selectedArea === 'all') {
+      return withGps;
+    }
+    
+    return withGps.filter((it: any) => {
+      const gps = it.meta.gps;
+      return getArea(gps.lat, gps.lon) === selectedArea;
+    });
+  }, [items, selectedArea]);
+  
+  // エリアごとの件数を計算
+  const areaCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {
+      '北海道': 0,
+      '東北': 0,
+      '関東': 0,
+      '中部': 0,
+      '近畿': 0,
+      '中国': 0,
+      '四国': 0,
+      '九州・沖縄': 0,
+    };
+    
+    items.forEach((it: any) => {
+      if (it.meta?.gps?.lat && it.meta?.gps?.lon) {
+        const area = getArea(it.meta.gps.lat, it.meta.gps.lon);
+        counts[area] = (counts[area] || 0) + 1;
+      }
+    });
+    
+    return counts;
   }, [items]);
 
   // Leaflet地図の初期化
@@ -2150,13 +2222,15 @@ function MapView() {
       // 地図を初期化
       const map = L.map(mapRef.current).setView([center.lat, center.lng], 13);
       
-      // 国土地理院の地形図タイル
-      L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {
-        attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
+      // 国土地理院の地図タイル
+      const tileConfig = mapTiles[mapType as keyof typeof mapTiles] || mapTiles.std;
+      const tileLayer = L.tileLayer(tileConfig.url, {
+        attribution: tileConfig.attribution,
         maxZoom: 18,
       }).addTo(map);
 
       mapInstanceRef.current = map;
+      tileLayerRef.current = tileLayer;
       
       // 現在地へ戻るボタンを追加
       const recenterButton = L.control({ position: 'topright' });
@@ -2204,6 +2278,26 @@ function MapView() {
       }
     };
   }, [center]);
+
+  // 地図タイプ変更時にタイルレイヤーを更新
+  React.useEffect(() => {
+    if (!mapInstanceRef.current || !tileLayerRef.current) return;
+
+    const L = (window as any).L;
+    if (!L) return;
+
+    // 既存のタイルレイヤーを削除
+    tileLayerRef.current.remove();
+
+    // 新しいタイルレイヤーを追加
+    const tileConfig = mapTiles[mapType as keyof typeof mapTiles] || mapTiles.std;
+    const newTileLayer = L.tileLayer(tileConfig.url, {
+      attribution: tileConfig.attribution,
+      maxZoom: 18,
+    }).addTo(mapInstanceRef.current);
+
+    tileLayerRef.current = newTileLayer;
+  }, [mapType]);
 
   // マーカーを更新
   React.useEffect(() => {
@@ -2274,13 +2368,77 @@ function MapView() {
     <div className="card" style={{ padding: 12 }}>
       <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>地図</div>
       
-      {itemsWithLocation.length === 0 ? (
+      {itemsWithLocation.length === 0 && selectedArea === 'all' ? (
         <div style={{ padding: 16, textAlign: "center", opacity: 0.8 }}>
           位置情報付きの記録がまだありません。<br />
           撮影時に位置情報を許可すると、地図上に表示されます。
         </div>
       ) : (
         <div>
+          {/* 地図タイプ選択 */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 8 }}>地図タイプ</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {Object.entries(mapTiles).map(([key, config]) => (
+                <button
+                  key={key}
+                  onClick={() => setMapType(key)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    border: "1px solid var(--card-border)",
+                    background: mapType === key ? '#10b981' : '#fff',
+                    color: mapType === key ? '#fff' : 'var(--fg)',
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  {config.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* エリア選択 */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 8 }}>エリアで絞り込み</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button
+                onClick={() => setSelectedArea('all')}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 6,
+                  border: "1px solid var(--card-border)",
+                  background: selectedArea === 'all' ? '#3b82f6' : '#fff',
+                  color: selectedArea === 'all' ? '#fff' : 'var(--fg)',
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                すべて ({items.filter((it: any) => it.meta?.gps?.lat).length})
+              </button>
+              {Object.entries(areaCounts).map(([area, count]) => (
+                count > 0 && (
+                  <button
+                    key={area}
+                    onClick={() => setSelectedArea(area)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: 6,
+                      border: "1px solid var(--card-border)",
+                      background: selectedArea === area ? '#3b82f6' : '#fff',
+                      color: selectedArea === area ? '#fff' : 'var(--fg)',
+                      fontSize: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {area} ({count})
+                  </button>
+                )
+              ))}
+            </div>
+          </div>
+          
           <div style={{ marginBottom: 12, fontSize: 13, opacity: 0.8 }}>
             {itemsWithLocation.length}件の記録を表示中
           </div>

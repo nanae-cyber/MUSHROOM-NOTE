@@ -23,9 +23,19 @@ export function StatsView() {
   // 統計データを計算
   const totalCount = items.length;
   
-  // 月別の観察数
+  // 撮影日を取得する関数（occurAt > capturedAt > shotAt > createdAt）
+  const getCaptureDate = (item: any): number => {
+    return (
+      (item.meta as any)?.occurAt ||
+      (item.meta as any)?.capturedAt ||
+      (item.meta as any)?.shotAt ||
+      item.createdAt
+    );
+  };
+
+  // 月別の観察数（撮影日ベース）
   const monthlyData = items.reduce((acc, item) => {
-    const date = new Date(item.createdAt);
+    const date = new Date(getCaptureDate(item));
     const key = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`;
     acc[key] = (acc[key] || 0) + 1;
     return acc;

@@ -254,6 +254,7 @@ export function ZukanView() {
                     }}
                     loading="lazy"
                     decoding="async"
+                    fetchPriority="low"
                   />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
