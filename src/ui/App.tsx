@@ -15,6 +15,7 @@ import { SyncIndicator } from "./SyncIndicator";
 import { MyPageModal } from "./MyPageModal";
 import { StatsView } from "./StatsView";
 import { MushroomForecast } from "./MushroomForecast";
+import { OfflineMapManager } from "./OfflineMapManager";
 
 // デバッグ用: db を window に公開（あとで消してOK）
 import { db, type Row } from "../utils/db";
@@ -2077,6 +2078,8 @@ function MapView() {
   const [center, setCenter] = React.useState<{ lat: number; lng: number } | null>(null);
   const [selectedArea, setSelectedArea] = React.useState<string>('all');
   const [mapType, setMapType] = React.useState<string>('std');
+  const [showOfflineManager, setShowOfflineManager] = React.useState(false);
+  const [fullscreen, setFullscreen] = React.useState(false);
   const mapRef = React.useRef<HTMLDivElement>(null);
   const mapInstanceRef = React.useRef<any>(null);
   const markersRef = React.useRef<any[]>([]);
@@ -2094,28 +2097,13 @@ function MapView() {
       url: 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
       attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
     },
-    seamlessphoto: {
-      name: '写真',
-      url: 'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
-      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
-    },
-    relief: {
-      name: '色別標高図',
-      url: 'https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png',
-      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
-    },
   };
 
-  // エリア分類関数（緯度経度から地域を判定）
+  // エリア分類関数（緯度経度を0.5度グリッドで分類）
   const getArea = (lat: number, lon: number): string => {
-    if (lat >= 43) return '北海道';
-    if (lat >= 40) return '東北';
-    if (lat >= 36 && lon <= 139) return '関東';
-    if (lat >= 35 && lon <= 137) return '中部';
-    if (lat >= 34 && lon <= 136) return '近畿';
-    if (lat >= 33 && lon <= 134) return '中国';
-    if (lat >= 32 && lon <= 133) return '四国';
-    return '九州・沖縄';
+    const latGrid = Math.floor(lat * 2) / 2; // 0.5度単位
+    const lonGrid = Math.floor(lon * 2) / 2;
+    return `${latGrid.toFixed(1)}°N, ${lonGrid.toFixed(1)}°E`;
   };
 
   const reload = async () => {
@@ -2123,14 +2111,35 @@ function MapView() {
       const list = await db.list();
       setItems(list);
       
-      // 位置情報がある最初のアイテムを中心に設定
-      const firstWithLocation = list.find((it: any) => it.meta?.gps?.lat && it.meta?.gps?.lon);
-      if (firstWithLocation) {
-        const gps = (firstWithLocation as any).meta.gps;
-        setCenter({ lat: gps.lat, lng: gps.lon });
+      // 現在地を取得して中心に設定
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setCenter({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+          () => {
+            // 位置情報取得失敗時は最初のアイテムの位置
+            const firstWithLocation = list.find((it: any) => it.meta?.gps?.lat && it.meta?.gps?.lon);
+            if (firstWithLocation) {
+              const gps = (firstWithLocation as any).meta.gps;
+              setCenter({ lat: gps.lat, lng: gps.lon });
+            } else {
+              setCenter({ lat: 36.5, lng: 138.0 });
+            }
+          }
+        );
       } else {
-        // デフォルト位置（日本の中心付近）
-        setCenter({ lat: 36.5, lng: 138.0 });
+        // 位置情報がない場合は最初のアイテムの位置
+        const firstWithLocation = list.find((it: any) => it.meta?.gps?.lat && it.meta?.gps?.lon);
+        if (firstWithLocation) {
+          const gps = (firstWithLocation as any).meta.gps;
+          setCenter({ lat: gps.lat, lng: gps.lon });
+        } else {
+          setCenter({ lat: 36.5, lng: 138.0 });
+        }
       }
     } finally {
       setLoading(false);
@@ -2259,6 +2268,23 @@ function MapView() {
       };
       recenterButton.addTo(map);
       
+      // 現在地マーカーを追加
+      L.marker([center.lat, center.lng], {
+        icon: L.divIcon({
+          className: 'current-location-marker',
+          html: `<div style="
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 2px 8px rgba(0,0,0,0.3);
+          "></div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        }),
+      }).addTo(map).bindPopup('現在地');
+      
       // 地図のサイズを調整
       setTimeout(() => {
         if (mapInstanceRef.current) {
@@ -2364,9 +2390,56 @@ function MapView() {
 
   const selectedItem = selectedId ? items.find(it => it.id === selectedId) : null;
 
-  return (
-    <div className="card" style={{ padding: 12 }}>
-      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>地図</div>
+  const mapContent = (
+    <>
+      {/* ヘッダー */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        marginBottom: 12,
+        padding: fullscreen ? 12 : 0,
+        background: fullscreen ? '#fff' : 'transparent',
+        borderBottom: fullscreen ? '1px solid var(--card-border)' : 'none',
+      }}>
+        <div style={{ fontSize: 18, fontWeight: 600 }}>地図</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setShowOfflineManager(true)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid var(--card-border)",
+              background: '#fff',
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            📥 オフライン地図
+          </button>
+          <button
+            onClick={() => {
+              setFullscreen(!fullscreen);
+              // 地図のサイズを再計算
+              setTimeout(() => {
+                if (mapInstanceRef.current) {
+                  mapInstanceRef.current.invalidateSize();
+                }
+              }, 100);
+            }}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid var(--card-border)",
+              background: '#fff',
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            {fullscreen ? '🗗 縮小' : '🗖 全画面'}
+          </button>
+        </div>
+      </div>
       
       {itemsWithLocation.length === 0 && selectedArea === 'all' ? (
         <div style={{ padding: 16, textAlign: "center", opacity: 0.8 }}>
@@ -2448,7 +2521,7 @@ function MapView() {
             ref={mapRef}
             style={{
               width: "100%",
-              height: "500px",
+              height: fullscreen ? "calc(100vh - 200px)" : "500px",
               borderRadius: 12,
               overflow: "hidden",
               border: "2px solid var(--card-border)",
@@ -2509,7 +2582,33 @@ function MapView() {
           )}
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {fullscreen ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            background: '#fff',
+            overflow: 'auto',
+          }}
+        >
+          {mapContent}
+        </div>
+      ) : (
+        <div className="card" style={{ padding: 12 }}>
+          {mapContent}
+        </div>
+      )}
+      
+      {showOfflineManager && (
+        <OfflineMapManager onClose={() => setShowOfflineManager(false)} />
+      )}
+    </>
   );
 }
 
