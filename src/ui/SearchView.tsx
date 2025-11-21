@@ -1126,8 +1126,54 @@ export function SearchView() {
                       alt=""
                       style={{ width: "100%", height: "auto", borderRadius: 8 }}
                     />
-                    <div style={{ fontSize: 12, opacity: 0.8 }}>
-                      {new Date(previewRow.createdAt).toLocaleString()}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, opacity: 0.8 }}>
+                      <div>
+                        {new Date(
+                          (previewRow.meta as any)?.occurAt || 
+                          (previewRow.meta as any)?.capturedAt || 
+                          (previewRow.meta as any)?.shotAt || 
+                          previewRow.createdAt
+                        ).toLocaleString()}
+                      </div>
+                      {/* GPS アイコン */}
+                      {((previewRow.meta as any)?.gps?.lat && (previewRow.meta as any)?.gps?.lon) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const gps = (previewRow.meta as any).gps;
+                            window.open(
+                              `https://www.google.com/maps?q=${gps.lat},${gps.lon}`,
+                              '_blank'
+                            );
+                          }}
+                          style={{
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            borderRadius: 4,
+                            padding: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                          }}
+                          title="地図で見る"
+                          aria-label="地図で見る"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="16"
+                            height="16"
+                            fill="none"
+                            stroke="rgb(59, 130, 246)"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                     {(() => {
                       const d = (previewRow as any).meta?.detail || {};

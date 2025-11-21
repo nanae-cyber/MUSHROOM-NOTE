@@ -255,11 +255,54 @@ export function ZukanView() {
                     loading="lazy"
                   />
                 </div>
-                {getName(it) ? (
-                  <div style={{ fontSize: 12, marginTop: 6, opacity: 0.9 }}>
-                    {getName(it)}
-                  </div>
-                ) : null}
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
+                  {getName(it) ? (
+                    <div style={{ fontSize: 12, opacity: 0.9, flex: 1 }}>
+                      {getName(it)}
+                    </div>
+                  ) : <div style={{ flex: 1 }} />}
+                  {/* GPS アイコン */}
+                  {((it.meta as any)?.gps?.lat && (it.meta as any)?.gps?.lon) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const gps = (it.meta as any).gps;
+                        window.open(
+                          `https://www.google.com/maps?q=${gps.lat},${gps.lon}`,
+                          '_blank'
+                        );
+                      }}
+                      style={{
+                        background: 'rgba(59, 130, 246, 0.1)',
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                        borderRadius: 4,
+                        padding: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        width: 24,
+                        height: 24,
+                      }}
+                      title="地図で見る"
+                      aria-label="地図で見る"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="rgb(59, 130, 246)"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </button>
             ))}
           </div>
@@ -500,7 +543,12 @@ export function ZukanView() {
                               fontWeight: 500,
                             }}
                           >
-                            {new Date(previewRow.createdAt).toLocaleString()}
+                            {new Date(
+                              (previewRow.meta as any)?.occurAt || 
+                              (previewRow.meta as any)?.capturedAt || 
+                              (previewRow.meta as any)?.shotAt || 
+                              previewRow.createdAt
+                            ).toLocaleString()}
                           </div>
                         </div>
                         

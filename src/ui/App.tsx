@@ -2215,7 +2215,12 @@ function MapView() {
           <div style="min-width: 150px;">
             <img src="${it.photoUrl}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;" />
             <div style="font-weight: 600; margin-bottom: 4px;">${name}</div>
-            <div style="font-size: 12px; opacity: 0.8;">${new Date(it.createdAt).toLocaleString()}</div>
+            <div style="font-size: 12px; opacity: 0.8;">${new Date(
+              (it.meta as any)?.occurAt || 
+              (it.meta as any)?.capturedAt || 
+              (it.meta as any)?.shotAt || 
+              it.createdAt
+            ).toLocaleString()}</div>
           </div>
         `)
         .on('click', () => {
@@ -2301,7 +2306,12 @@ function MapView() {
                     {(selectedItem as any).meta?.detail?.mushroomName || "名前未登録"}
                   </div>
                   <div style={{ fontSize: 12, opacity: 0.8 }}>
-                    {new Date(selectedItem.createdAt).toLocaleString()}
+                    {new Date(
+                      (selectedItem.meta as any)?.occurAt || 
+                      (selectedItem.meta as any)?.capturedAt || 
+                      (selectedItem.meta as any)?.shotAt || 
+                      selectedItem.createdAt
+                    ).toLocaleString()}
                   </div>
                   {(selectedItem as any).meta?.lat && (
                     <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
