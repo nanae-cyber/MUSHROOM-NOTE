@@ -158,14 +158,19 @@ function mockIdentify(): Candidate[] {
 export async function identifyMushroom(image: Blob): Promise<Candidate[]> {
   try {
     console.log("[AI] Attempting Gemini API call...");
+    console.log("[AI] Image size:", image.size, "bytes, type:", image.type);
     const result = await identifyWithGemini(image);
     console.log("[AI] Gemini API success:", result);
     return result;
   } catch (e) {
     console.error("[AI] Gemini API failed, fallback to mock:", e);
     if (e instanceof Error) {
-      console.error("[AI] Error details:", e.message, e.stack);
+      console.error("[AI] Error name:", e.name);
+      console.error("[AI] Error message:", e.message);
+      console.error("[AI] Error stack:", e.stack);
     }
+    // エラーの詳細をユーザーに表示
+    alert(`AI判定に失敗しました。モック応答を表示します。\n\nエラー: ${e instanceof Error ? e.message : String(e)}\n\nブラウザのコンソールで詳細を確認してください。`);
     return mockIdentify();
   }
 }
