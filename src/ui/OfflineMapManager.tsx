@@ -1,6 +1,6 @@
 // オフライン地図管理UI
 import React, { useState, useEffect } from 'react';
-import { downloadAreaTiles, getDownloadedAreas, deleteArea, clearAllTiles } from '../utils/offlineMap';
+import { downloadAreaTiles, getDownloadedAreas, deleteArea, clearAllTiles, JAPAN_CITIES } from '../utils/offlineMap';
 
 interface Props {
   onClose: () => void;
@@ -10,14 +10,9 @@ export function OfflineMapManager({ onClose }: Props) {
   const [areas, setAreas] = useState<any[]>([]);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [newArea, setNewArea] = useState({
-    minLat: 35.0,
-    maxLat: 36.0,
-    minLon: 139.0,
-    maxLon: 140.0,
-    zoom: 13,
-    mapType: 'std',
-  });
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedPrefecture, setSelectedPrefecture] = useState('');
+  const [zoom, setZoom] = useState(13);
 
   useEffect(() => {
     loadAreas();
@@ -29,19 +24,23 @@ export function OfflineMapManager({ onClose }: Props) {
   };
 
   const handleDownload = async () => {
+    if (!selectedCity) {
+      alert('市町村を選択してください');
+      return;
+    }
+
+    const city = JAPAN_CITIES.find(c => c.name === selectedCity);
+    if (!city) return;
+
     setDownloading(true);
     setProgress({ current: 0, total: 0 });
 
     try {
       await downloadAreaTiles(
-        {
-          minLat: newArea.minLat,
-          maxLat: newArea.maxLat,
-          minLon: newArea.minLon,
-          maxLon: newArea.maxLon,
-        },
-        newArea.zoom,
-        newArea.mapType,
+        city.name,
+        city.bounds,
+        zoom,
+        'pale', // 淡色地図のみ
         (current, total) => {
           setProgress({ current, total });
         }
@@ -56,6 +55,14 @@ export function OfflineMapManager({ onClose }: Props) {
       setDownloading(false);
     }
   };
+
+  // 都道府県リストを取得
+  const prefectures = Array.from(new Set(JAPAN_CITIES.map(c => c.prefecture))).sort();
+  
+  // 選択された都道府県の市町村リスト
+  const cities = selectedPrefecture
+    ? JAPAN_CITIES.filter(c => c.prefecture === selectedPrefecture)
+    : [];
 
   const handleDelete = async (area: string) => {
     if (confirm('このエリアを削除しますか？')) {
@@ -125,9 +132,9 @@ export function OfflineMapManager({ onClose }: Props) {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 600 }}>{area.area}</div>
+                    <div style={{ fontWeight: 600 }}>{area.cityName || area.area}</div>
                     <div style={{ fontSize: 12, opacity: 0.7 }}>
-                      ズーム: {area.zoom} | タイル数: {area.tileCount}
+                      ズーム: {area.zoom} | タイル数: {area.tileCount} | 淡色地図
                     </div>
                   </div>
                   <button
@@ -170,47 +177,43 @@ export function OfflineMapManager({ onClose }: Props) {
         <div>
           <h3 style={{ fontSize: 16, marginBottom: 12 }}>新規ダウンロード</h3>
           <div style={{ display: 'grid', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div>
-                <label style={{ fontSize: 12, opacity: 0.8 }}>最小緯度</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={newArea.minLat}
-                  onChange={(e) => setNewArea({ ...newArea, minLat: parseFloat(e.target.value) })}
-                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, opacity: 0.8 }}>最大緯度</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={newArea.maxLat}
-                  onChange={(e) => setNewArea({ ...newArea, maxLat: parseFloat(e.target.value) })}
-                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, opacity: 0.8 }}>最小経度</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={newArea.minLon}
-                  onChange={(e) => setNewArea({ ...newArea, minLon: parseFloat(e.target.value) })}
-                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, opacity: 0.8 }}>最大経度</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={newArea.maxLon}
-                  onChange={(e) => setNewArea({ ...newArea, maxLon: parseFloat(e.target.value) })}
-                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }}
-                />
-              </div>
+            <div>
+              <label style={{ fontSize: 12, opacity: 0.8 }}>都道府県</label>
+              <select
+                value={selectedPrefecture}
+                onChange={(e) => {
+                  setSelectedPrefecture(e.target.value);
+                  setSelectedCity('');
+                }}
+                style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }}
+              >
+                <option value="">都道府県を選択</option>
+                {prefectures.map(pref => (
+                  <option key={pref} value={pref}>{pref}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, opacity: 0.8 }}>市町村</label>
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                disabled={!selectedPrefecture}
+                style={{ 
+                  width: '100%', 
+                  padding: 8, 
+                  borderRadius: 6, 
+                  border: '1px solid #ddd',
+                  background: selectedPrefecture ? '#fff' : '#f5f5f5',
+                  cursor: selectedPrefecture ? 'pointer' : 'not-allowed'
+                }}
+              >
+                <option value="">市町村を選択</option>
+                {cities.map(city => (
+                  <option key={city.name} value={city.name}>{city.name}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -219,25 +222,13 @@ export function OfflineMapManager({ onClose }: Props) {
                 type="number"
                 min="10"
                 max="15"
-                value={newArea.zoom}
-                onChange={(e) => setNewArea({ ...newArea, zoom: parseInt(e.target.value) })}
+                value={zoom}
+                onChange={(e) => setZoom(parseInt(e.target.value))}
                 style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }}
               />
               <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>
-                ※ズームレベルが高いほどタイル数が増えます
+                ※ズームレベルが高いほどタイル数が増えます（淡色地図のみ）
               </div>
-            </div>
-
-            <div>
-              <label style={{ fontSize: 12, opacity: 0.8 }}>地図タイプ</label>
-              <select
-                value={newArea.mapType}
-                onChange={(e) => setNewArea({ ...newArea, mapType: e.target.value })}
-                style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }}
-              >
-                <option value="std">標準地図</option>
-                <option value="pale">淡色地図</option>
-              </select>
             </div>
 
             {downloading && (

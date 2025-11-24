@@ -2077,7 +2077,7 @@ function MapView() {
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [center, setCenter] = React.useState<{ lat: number; lng: number } | null>(null);
   const [selectedArea, setSelectedArea] = React.useState<string>('all');
-  const [mapType, setMapType] = React.useState<string>('std');
+  const [mapType, setMapType] = React.useState<string>('pale');
   const [showOfflineManager, setShowOfflineManager] = React.useState(false);
   const [fullscreen, setFullscreen] = React.useState(false);
   const mapRef = React.useRef<HTMLDivElement>(null);
@@ -2085,13 +2085,8 @@ function MapView() {
   const markersRef = React.useRef<any[]>([]);
   const tileLayerRef = React.useRef<any>(null);
 
-  // 地図タイルの定義
+  // 地図タイルの定義（淡色地図のみ）
   const mapTiles = {
-    std: {
-      name: '標準地図',
-      url: 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
-      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
-    },
     pale: {
       name: '淡色地図',
       url: 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',

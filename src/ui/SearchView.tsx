@@ -3,6 +3,7 @@ import { db, type Row } from "../utils/db";
 import { DetailForm } from "./DetailForm";
 import { labelJP, getLabel } from "./labels";
 import { t } from "../i18n";
+import { JAPAN_CITIES, type CityBounds } from "../utils/offlineMap";
 
 export function SearchView() {
   const [items, setItems] = React.useState<Row[]>([]);
@@ -58,6 +59,12 @@ export function SearchView() {
   );
   const [weirdShape, setWeirdShape] = React.useState<string>(
     () => localStorage.getItem("search.f.weirdShape") || ""
+  );
+  const [selectedPrefecture, setSelectedPrefecture] = React.useState<string>(
+    () => localStorage.getItem("search.f.prefecture") || ""
+  );
+  const [selectedCity, setSelectedCity] = React.useState<string>(
+    () => localStorage.getItem("search.f.city") || ""
   );
 
   const optsCapColor: { value: string; label: string }[] = [
@@ -195,6 +202,16 @@ export function SearchView() {
       localStorage.setItem("search.f.weirdShape", weirdShape);
     } catch {}
   }, [weirdShape]);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("search.f.prefecture", selectedPrefecture);
+    } catch {}
+  }, [selectedPrefecture]);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("search.f.city", selectedCity);
+    } catch {}
+  }, [selectedCity]);
 
   const getName = (it: Row) =>
     (it as any).meta?.detail?.mushroomName?.trim?.() || "";
@@ -251,6 +268,20 @@ export function SearchView() {
       if (terrainTypeF && terrainTypeF !== "" && !tt.includes(nk(terrainTypeF))) return false;
       const n = getElevationMeters(teRaw);
       if (elevBucket && elevBucket !== "" && !inBucket(n, elevBucket)) return false;
+      
+      // 市町村フィルタ
+      if (selectedCity) {
+        const city = JAPAN_CITIES.find(c => c.name === selectedCity);
+        if (city) {
+          const gps = (it.meta as any)?.gps;
+          if (!gps?.lat || !gps?.lon) return false;
+          const { minLat, maxLat, minLon, maxLon } = city.bounds;
+          if (gps.lat < minLat || gps.lat > maxLat || gps.lon < minLon || gps.lon > maxLon) {
+            return false;
+          }
+        }
+      }
+      
       return true;
     });
     const out = [...arr];
@@ -283,6 +314,7 @@ export function SearchView() {
     terrainTypeF,
     terrainElevationF,
     elevBucket,
+    selectedCity,
   ]);
 
   // load selected for preview
@@ -705,6 +737,53 @@ export function SearchView() {
             >
               <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.9 }}>
                 {t("terrain_filter")}
+              </div>
+              
+              {/* 市町村フィルタ */}
+              <div style={{ display: "grid", gap: 6 }}>
+                <div style={{ fontSize: 12, opacity: 0.8 }}>市町村で絞り込み</div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  <select
+                    value={selectedPrefecture}
+                    onChange={(e) => {
+                      setSelectedPrefecture(e.target.value);
+                      setSelectedCity('');
+                    }}
+                    style={{
+                      padding: "8px",
+                      borderRadius: 8,
+                      border: "1px solid var(--card-border)",
+                      background: "#fff",
+                      fontSize: 13,
+                    }}
+                  >
+                    <option value="">都道府県を選択</option>
+                    {Array.from(new Set(JAPAN_CITIES.map(c => c.prefecture))).sort().map(pref => (
+                      <option key={pref} value={pref}>{pref}</option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    disabled={!selectedPrefecture}
+                    style={{
+                      padding: "8px",
+                      borderRadius: 8,
+                      border: "1px solid var(--card-border)",
+                      background: selectedPrefecture ? "#fff" : "#f5f5f5",
+                      fontSize: 13,
+                      cursor: selectedPrefecture ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    <option value="">市町村を選択</option>
+                    {selectedPrefecture && JAPAN_CITIES
+                      .filter(c => c.prefecture === selectedPrefecture)
+                      .map(city => (
+                        <option key={city.name} value={city.name}>{city.name}</option>
+                      ))}
+                  </select>
+                </div>
               </div>
               {/* 方角 chips */}
               <div style={{ display: "grid", gap: 6 }}>
