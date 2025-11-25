@@ -254,7 +254,6 @@ export function ZukanView() {
                     }}
                     loading="lazy"
                     decoding="async"
-                    fetchPriority="low"
                   />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
@@ -265,7 +264,7 @@ export function ZukanView() {
                   ) : <div style={{ flex: 1 }} />}
                   {/* GPS アイコン */}
                   {((it.meta as any)?.gps?.lat && (it.meta as any)?.gps?.lon) && (
-                    <button
+                    <div
                       onClick={(e) => {
                         e.stopPropagation();
                         const gps = (it.meta as any).gps;
@@ -287,7 +286,18 @@ export function ZukanView() {
                         height: 24,
                       }}
                       title="地図で見る"
-                      aria-label="地図で見る"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation();
+                          const gps = (it.meta as any).gps;
+                          window.open(
+                            `https://www.google.com/maps?q=${gps.lat},${gps.lon}`,
+                            '_blank'
+                          );
+                        }
+                      }}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -302,7 +312,7 @@ export function ZukanView() {
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                         <circle cx="12" cy="10" r="3" />
                       </svg>
-                    </button>
+                    </div>
                   )}
                 </div>
               </button>

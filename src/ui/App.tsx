@@ -2227,7 +2227,7 @@ function MapView() {
       const map = L.map(mapRef.current).setView([center.lat, center.lng], 13);
       
       // 国土地理院の地図タイル
-      const tileConfig = mapTiles[mapType as keyof typeof mapTiles] || mapTiles.std;
+      const tileConfig = mapTiles[mapType as keyof typeof mapTiles] || mapTiles.pale;
       const tileLayer = L.tileLayer(tileConfig.url, {
         attribution: tileConfig.attribution,
         maxZoom: 18,
@@ -2311,7 +2311,7 @@ function MapView() {
     tileLayerRef.current.remove();
 
     // 新しいタイルレイヤーを追加
-    const tileConfig = mapTiles[mapType as keyof typeof mapTiles] || mapTiles.std;
+    const tileConfig = mapTiles[mapType as keyof typeof mapTiles] || mapTiles.pale;
     const newTileLayer = L.tileLayer(tileConfig.url, {
       attribution: tileConfig.attribution,
       maxZoom: 18,

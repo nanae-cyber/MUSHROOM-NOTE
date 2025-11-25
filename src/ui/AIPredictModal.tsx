@@ -95,11 +95,13 @@ export default function AIPredictModal({ id, onClose }: Props) {
           </div>
         </div>
 
-        <div style={{ 
-          padding: 16,
-          overflowY: "auto",
-          flex: 1,
-        }}>
+        <div
+          style={{
+            padding: 16,
+            overflowY: "auto",
+            flex: 1,
+          }}
+        >
           {thumbUrl && (
             <img
               src={thumbUrl}
@@ -130,7 +132,9 @@ export default function AIPredictModal({ id, onClose }: Props) {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+                    <div
+                      style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}
+                    >
                       {i + 1}. {c.name}
                     </div>
                     <div style={{ fontSize: 12, opacity: 0.75 }}>
@@ -144,11 +148,19 @@ export default function AIPredictModal({ id, onClose }: Props) {
                     onClick={async () => {
                       setRunning(true);
                       try {
-                        await (await import("../utils/db")).db.update(id, {
+                        await (
+                          await import("../utils/db")
+                        ).db.update(id, {
                           meta: {
-                            ...((await (await import("../utils/db")).db.getRaw(id))?.meta ?? {}),
+                            ...((
+                              await (await import("../utils/db")).db.getRaw(id)
+                            )?.meta ?? {}),
                             detail: {
-                              ...((await (await import("../utils/db")).db.getRaw(id))?.meta?.detail ?? {}),
+                              ...((
+                                await (
+                                  await import("../utils/db")
+                                ).db.getRaw(id)
+                              )?.meta?.detail ?? {}),
                               mushroomName: c.name,
                             },
                           },
@@ -157,7 +169,9 @@ export default function AIPredictModal({ id, onClose }: Props) {
                         onClose();
                         location.reload();
                       } catch (e: any) {
-                        alert(`${t("save_failed")}: ` + (e?.message ?? String(e)));
+                        alert(
+                          `${t("save_failed")}: ` + (e?.message ?? String(e))
+                        );
                       } finally {
                         setRunning(false);
                       }
@@ -196,15 +210,17 @@ export default function AIPredictModal({ id, onClose }: Props) {
               {!cands.length && <div>{t("no_candidates")}</div>}
             </div>
           )}
-          <div style={{ 
-            display: "flex", 
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 8, 
-            marginTop: 20,
-            paddingTop: 16,
-            borderTop: "1px solid var(--card-border)",
-          }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 20,
+              paddingTop: 16,
+              borderTop: "1px solid var(--card-border)",
+            }}
+          >
             <button
               className="icon-btn"
               onClick={async () => {
@@ -220,7 +236,7 @@ export default function AIPredictModal({ id, onClose }: Props) {
                       )?.meta ?? {}),
                       ai: {
                         model: import.meta.env.VITE_GEMINI_API_KEY
-                          ? "gemini-1.5-flash"
+                          ? "gemini-2.5-flash"
                           : "mock",
                         at: Date.now(),
                         candidates: cands,

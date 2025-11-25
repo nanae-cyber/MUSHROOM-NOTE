@@ -1,6 +1,6 @@
 console.log("[ENV] has gemini key?", !!import.meta.env.VITE_GEMINI_API_KEY);
 // src/utils/ai.ts
-// 画像からAI判定（Gemini 1.5 Flash） or モックにフォールバック
+// 画像からAI判定（Gemini 2.0 Flash / 1.5 Flash） or モックにフォールバック
 type Candidate = { name: string; confidence: number; rationale?: string };
 
 async function blobToBase64Webp(
@@ -47,7 +47,10 @@ async function blobToBase64Webp(
 async function identifyWithGemini(image: Blob): Promise<Candidate[]> {
   const KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
   if (!KEY) throw new Error("NO_KEY");
+
+  console.log("[AI] Converting image to base64...");
   const b64 = await blobToBase64Webp(image);
+  console.log("[AI] Image converted, base64 length:", b64.length);
 
   const body = {
     contents: [
@@ -78,7 +81,7 @@ async function identifyWithGemini(image: Blob): Promise<Candidate[]> {
         ],
       },
     ],
-    generationConfig: { 
+    generationConfig: {
       temperature: 0.3,
       topP: 0.8,
       topK: 40,
@@ -86,53 +89,126 @@ async function identifyWithGemini(image: Blob): Promise<Candidate[]> {
   };
 
   console.log("[AI] Sending request to Gemini API...");
-  const resp = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
-      KEY,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+  console.log("[AI] API Key (first 10 chars):", KEY.substring(0, 10) + "...");
+  console.log("[AI] API Key length:", KEY.length);
+
+  // 利用可能なモデルのリストから動的に取得
+  let modelConfigs: Array<{ version: string; model: string }> = [];
+  
+  // まず利用可能なモデルを取得
+  try {
+    const listResp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${KEY}`
+    );
+    
+    if (listResp.ok) {
+      const listData = await listResp.json();
+      const availableModels = listData.models || [];
+      
+      console.log("[AI] Available models from API:", availableModels.map((m: any) => m.name));
+      
+      // generateContent をサポートするモデルのみフィルタ
+      const supportedModels = availableModels.filter((m: any) => 
+        m.supportedGenerationMethods?.includes('generateContent')
+      );
+      
+      console.log("[AI] Models supporting generateContent:", supportedModels.map((m: any) => m.name));
+      
+      // モデル名から設定を作成（models/プレフィックスを除去）
+      modelConfigs = supportedModels
+        .map((m: any) => {
+          const fullName = m.name; // "models/gemini-1.5-flash" 形式
+          const modelName = fullName.replace('models/', '');
+          return { version: "v1beta", model: modelName };
+        })
+        .filter((c: any) => c.model.includes('flash') || c.model.includes('pro')); // flashまたはproモデルのみ
+      
+      console.log("[AI] Will try these models:", modelConfigs);
     }
-  );
-  
-  console.log("[AI] Response status:", resp.status);
-  
-  if (!resp.ok) {
-    const errorText = await resp.text();
-    console.error("[AI] API error response:", errorText);
-    throw new Error(`HTTP ${resp.status}: ${errorText}`);
+  } catch (e) {
+    console.warn("[AI] Could not fetch model list, using fallback models:", e);
   }
   
-  const data = await resp.json();
-  console.log("[AI] API response data:", data);
+  // フォールバック: モデルリストが取得できなかった場合
+  if (modelConfigs.length === 0) {
+    console.log("[AI] Using fallback model list");
+    modelConfigs = [
+      { version: "v1beta", model: "gemini-1.5-flash" },
+      { version: "v1beta", model: "gemini-1.5-pro" },
+      { version: "v1", model: "gemini-1.5-flash" },
+    ];
+  }
 
-  // レスポンスからJSONを抽出（モデルはしばしばテキストで返す）
-  const text: string =
-    data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("\n") ??
-    "";
-  
-  console.log("[AI] Extracted text:", text);
-  
-  // JSON 部分だけを頑張って取り出す
-  const match = text.match(/\[[\s\S]*\]/);
-  const json = match ? match[0] : text;
-  
-  console.log("[AI] Parsed JSON string:", json);
-  
-  const arr = JSON.parse(json) as Candidate[];
-  
-  // 安全のため整形
-  const result = arr
-    .filter((x) => x && typeof x.name === "string")
-    .map((x) => ({
-      name: x.name,
-      confidence: Number(x.confidence) || 0,
-      rationale: x.rationale?.slice(0, 120),
-    }));
-  
-  console.log("[AI] Final result:", result);
-  return result;
+  let lastError: Error | null = null;
+
+  for (const config of modelConfigs) {
+    try {
+      console.log(`[AI] Trying ${config.version}/models/${config.model}`);
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:generateContent?key=${KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
+
+      console.log("[AI] Response status:", resp.status);
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error(
+          `[AI] ${config.version}/models/${config.model} failed:`,
+          errorText
+        );
+        lastError = new Error(`HTTP ${resp.status}: ${errorText}`);
+        continue; // 次のモデルを試す
+      }
+
+      const data = await resp.json();
+      console.log("[AI] API response data:", data);
+
+      // レスポンスからJSONを抽出（モデルはしばしばテキストで返す）
+      const text: string =
+        data?.candidates?.[0]?.content?.parts
+          ?.map((p: any) => p.text)
+          .join("\n") ?? "";
+
+      console.log("[AI] Extracted text:", text);
+
+      // JSON 部分だけを頑張って取り出す
+      const match = text.match(/\[[\s\S]*\]/);
+      const json = match ? match[0] : text;
+
+      console.log("[AI] Parsed JSON string:", json);
+
+      const arr = JSON.parse(json) as Candidate[];
+
+      // 安全のため整形
+      const result = arr
+        .filter((x) => x && typeof x.name === "string")
+        .map((x) => ({
+          name: x.name,
+          confidence: Number(x.confidence) || 0,
+          rationale: x.rationale?.slice(0, 120),
+        }));
+
+      console.log(
+        `[AI] Success with ${config.version}/models/${config.model}:`,
+        result
+      );
+      return result;
+    } catch (e) {
+      console.error(
+        `[AI] Error with ${config.version}/models/${config.model}:`,
+        e
+      );
+      lastError = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+
+  // すべてのモデルで失敗した場合
+  throw lastError || new Error("All models failed");
 }
 
 function mockIdentify(): Candidate[] {
@@ -159,6 +235,16 @@ export async function identifyMushroom(image: Blob): Promise<Candidate[]> {
   try {
     console.log("[AI] Attempting Gemini API call...");
     console.log("[AI] Image size:", image.size, "bytes, type:", image.type);
+
+    // APIキーの確認
+    const KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+    if (!KEY) {
+      throw new Error(
+        "Gemini APIキーが設定されていません。.envファイルにVITE_GEMINI_API_KEYを設定してください。"
+      );
+    }
+    console.log("[AI] API key found, length:", KEY.length);
+
     const result = await identifyWithGemini(image);
     console.log("[AI] Gemini API success:", result);
     return result;
@@ -169,8 +255,31 @@ export async function identifyMushroom(image: Blob): Promise<Candidate[]> {
       console.error("[AI] Error message:", e.message);
       console.error("[AI] Error stack:", e.stack);
     }
-    // エラーの詳細をユーザーに表示
-    alert(`AI判定に失敗しました。モック応答を表示します。\n\nエラー: ${e instanceof Error ? e.message : String(e)}\n\nブラウザのコンソールで詳細を確認してください。`);
+
+    // エラーメッセージを分かりやすく
+    let errorMsg = "AI判定に失敗しました。";
+    if (e instanceof Error) {
+      if (
+        e.message.includes("NO_KEY") ||
+        e.message.includes("APIキーが設定されていません")
+      ) {
+        errorMsg +=
+          "\n\nGemini APIキーが設定されていません。\n設定方法: docs/GEMINI_API_SETUP.md を参照してください。";
+      } else if (e.message.includes("HTTP 404")) {
+        errorMsg +=
+          "\n\nモデルが見つかりません。\n\n詳細: " + e.message + "\n\nブラウザのコンソール（F12キー）で詳細なログを確認してください。";
+      } else if (e.message.includes("HTTP 403")) {
+        errorMsg += "\n\nAPIキーが無効です。正しいキーを設定してください。";
+      } else if (e.message.includes("HTTP 429")) {
+        errorMsg +=
+          "\n\nAPIの利用制限に達しました。しばらく待ってから再試行してください。";
+      } else {
+        errorMsg += `\n\nエラー詳細: ${e.message}\n\nブラウザのコンソール（F12キー）で「[AI]」で始まるログを確認してください。`;
+      }
+    }
+    errorMsg += "\n\nモック応答を表示します。";
+
+    alert(errorMsg);
     return mockIdentify();
   }
 }
