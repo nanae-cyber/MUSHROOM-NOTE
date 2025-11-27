@@ -16,6 +16,7 @@ import { MyPageModal } from "./MyPageModal";
 import { StatsView } from "./StatsView";
 import { MushroomForecast } from "./MushroomForecast";
 import { OfflineMapManager } from "./OfflineMapManager";
+import { FullscreenMap } from "./FullscreenMap";
 
 // デバッグ用: db を window に公開（あとで消してOK）
 import { db, type Row } from "../utils/db";
@@ -57,6 +58,7 @@ export default function App() {
   const [showContact, setShowContact] = useState(false);
   const [showMyPage, setShowMyPage] = useState(false);
   const [captureMode, setCaptureMode] = useState<"camera" | "album" | null>(null);
+  const [showFullscreenMap, setShowFullscreenMap] = useState(false);
   
   // 有料プラン判定（仮実装：localStorageで管理）
   const [isPremium, setIsPremium] = useState(() => {
@@ -289,6 +291,28 @@ export default function App() {
           </button>
         </div>
 
+        {/* テスト用地図ボタン */}
+        <button
+          onClick={() => {
+            console.log('[TEST] Map button clicked!');
+            setShowFullscreenMap(true);
+          }}
+          style={{
+            padding: '12px 24px',
+            background: '#22c55e',
+            color: 'white',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginBottom: 16,
+            width: '100%',
+          }}
+        >
+          🗺️ 地図を開く（テスト）
+        </button>
+
         {/* サブナビゲーション */}
         <nav className="icon-menu" aria-label="main shortcuts" style={{ marginBottom: 16 }}>
           <button
@@ -336,9 +360,12 @@ export default function App() {
             <span className="icon-label">{t("calendar")}</span>
           </button>
           <button
-            className={`icon-btn ${view === "map" ? "active" : ""}`}
+            className={`icon-btn ${showFullscreenMap ? "active" : ""}`}
             aria-label={t("map")}
-            onClick={() => setView("map")}
+            onClick={() => {
+              console.log('[Map] Button clicked, opening fullscreen map');
+              setShowFullscreenMap(true);
+            }}
           >
             <span className="icon" aria-hidden>
               <svg
@@ -422,11 +449,7 @@ export default function App() {
             <CalendarView isPremium={isPremium} onUpgrade={() => setShowPay(true)} lang={lang} />
           </section>
         )}
-        {view === "map" && (
-          <section style={{ display: "grid", gap: 12 }}>
-            <MapView />
-          </section>
-        )}
+
         {view === "stats" && isPremiumPlus && (
           <section style={{ display: "grid", gap: 12 }}>
             <StatsView />
@@ -477,6 +500,16 @@ export default function App() {
           lang={lang}
           onChangeLang={changeLang}
         />
+      )}
+
+      {showFullscreenMap && (
+        <>
+          {console.log('[Map] Rendering FullscreenMap component')}
+          <FullscreenMap onClose={() => {
+            console.log('[Map] Closing fullscreen map');
+            setShowFullscreenMap(false);
+          }} />
+        </>
       )}
     </ErrorBoundary>
   );

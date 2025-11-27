@@ -15,15 +15,15 @@ export function SyncIndicator() {
   // ログイン状態を確認
   useEffect(() => {
     const checkAuth = async () => {
-      if (!supabase) return;
+      if (!supabase || !isSupabaseConfigured()) return;
       
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await (supabase as any).auth.getSession();
       console.log('[SyncIndicator] Current session:', session);
       
       // 匿名ユーザーの場合はログアウト
       if (session?.user?.is_anonymous) {
         console.log('[SyncIndicator] Anonymous user detected, logging out...');
-        await supabase.auth.signOut();
+        await (supabase as any).auth.signOut();
         setIsLoggedIn(false);
         return;
       }
@@ -128,9 +128,9 @@ export function SyncIndicator() {
   };
   
   const handleLogout = async () => {
-    if (!supabase) return;
+    if (!supabase || !isSupabaseConfigured()) return;
     if (confirm('ログアウトしますか？\n\nローカルのデータは保持されますが、クラウド同期は停止します。')) {
-      await supabase.auth.signOut();
+      await (supabase as any).auth.signOut();
       setIsLoggedIn(false);
       setEnabled(false);
       setSyncEnabled(false);

@@ -53,13 +53,21 @@ export function getLastSyncTime() {
 
 // ユーザーIDの取得（メール認証）
 async function getUserId(): Promise<string | null> {
-  if (!supabase) return null;
+  if (!supabase || !isSupabaseConfigured()) {
+    console.log('[Sync] Supabase not configured');
+    return null;
+  }
   
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await (supabase as any).auth.getUser();
     
-    if (user) {
-      return user.id;
+    if (error) {
+      console.log('[Sync] Auth error:', error.message);
+      return null;
+    }
+    
+    if (data?.user) {
+      return data.user.id;
     }
     
     // ログインしていない場合はnullを返す
@@ -123,7 +131,7 @@ async function checkStorageLimit(userId: string, itemCount: number): Promise<{ a
 
 // IndexedDBからSupabaseへアップロード
 async function uploadToSupabase(userId: string): Promise<void> {
-  if (!supabase) return;
+  if (!supabase || !isSupabaseConfigured()) return;
   
   const localItems = await db.list();
   console.log(`[Upload] Found ${localItems.length} local items`);
@@ -140,7 +148,7 @@ async function uploadToSupabase(userId: string): Promise<void> {
       console.log(`[Upload] Processing item ${item.id}`);
       
       // 既にアップロード済みかチェック
-      const { data: existing, error: selectError } = await supabase
+      const { data: existing, error: selectError } = await (supabase as any)
         .from('specimens')
         .select('id, updated_at')
         .eq('user_id', userId)
@@ -190,7 +198,7 @@ async function uploadToSupabase(userId: string): Promise<void> {
       
       if (existing) {
         console.log(`[Upload] Updating item ${item.id}...`);
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('specimens')
           .update(record)
           .eq('id', existing.id);
@@ -198,7 +206,7 @@ async function uploadToSupabase(userId: string): Promise<void> {
         console.log(`[Upload] Item ${item.id} updated successfully`);
       } else {
         console.log(`[Upload] Inserting new item ${item.id}...`);
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('specimens')
           .insert(record);
         if (error) throw error;
@@ -213,9 +221,9 @@ async function uploadToSupabase(userId: string): Promise<void> {
 
 // Supabaseからダウンロード
 async function downloadFromSupabase(userId: string): Promise<void> {
-  if (!supabase) return;
+  if (!supabase || !isSupabaseConfigured()) return;
   
-  const { data: remoteItems, error } = await supabase
+  const { data: remoteItems, error } = await (supabase as any)
     .from('specimens')
     .select('*')
     .eq('user_id', userId);
@@ -301,7 +309,9 @@ export async function syncData(): Promise<void> {
     console.log('[Sync] Getting user ID...');
     const userId = await getUserId();
     if (!userId) {
-      throw new Error('Failed to get user ID');
+      console.log('[Sync] No user logged in, skipping sync (this is normal if not using cloud sync)');
+      setSyncStatus('idle');
+      return;
     }
     console.log('[Sync] User ID:', userId);
     
@@ -329,7 +339,14 @@ export async function syncData(): Promise<void> {
       }
     }, 3000);
   } catch (err) {
-    console.error('[Sync] Sync failed:', err);
+    // エラーの詳細をログに出力
+    if (err instanceof Error) {
+      console.error('[Sync] Sync failed:', err.message);
+      console.error('[Sync] Error details:', err);
+    } else {
+      console.error('[Sync] Sync failed:', err);
+    }
+    
     setSyncStatus('error');
     
     // エラー状態を5秒後にidleに戻す
@@ -407,14 +424,14 @@ if (typeof window !== 'undefined') {
     await syncData();
   };
   (window as any).clearSupabaseSession = async () => {
-    if (!supabase) {
+    if (!supabase || !isSupabaseConfigured()) {
       console.log('Supabase not configured');
       return;
     }
     console.log('=== Clearing Supabase Session ===');
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await (supabase as any).auth.getSession();
     console.log('Current session:', session);
-    await supabase.auth.signOut();
+    await (supabase as any).auth.signOut();
     console.log('Session cleared. Please reload the page.');
     window.location.reload();
   };

@@ -20,8 +20,9 @@ export function LoginModal({ onClose, onSuccess }: { onClose: () => void; onSucc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) {
+    if (!supabase || !isSupabaseConfigured()) {
       console.error('[LoginModal] Supabase not configured');
+      setError('クラウド同期が無効化されています');
       return;
     }
     
@@ -32,7 +33,7 @@ export function LoginModal({ onClose, onSuccess }: { onClose: () => void; onSucc
       if (isSignUp) {
         // 新規登録
         console.log('[LoginModal] Signing up...');
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await (supabase as any).auth.signUp({
           email,
           password,
         });
@@ -43,7 +44,7 @@ export function LoginModal({ onClose, onSuccess }: { onClose: () => void; onSucc
       } else {
         // ログイン
         console.log('[LoginModal] Logging in...');
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await (supabase as any).auth.signInWithPassword({
           email,
           password,
         });

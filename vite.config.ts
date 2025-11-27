@@ -36,6 +36,7 @@ export default defineConfig({
   // 開発サーバー（LANアクセス用）
   server: {
     host: true,
+    port: 5173,
     cors: true,
   },
 

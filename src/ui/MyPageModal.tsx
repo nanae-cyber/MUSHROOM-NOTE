@@ -1,6 +1,6 @@
 // src/ui/MyPageModal.tsx
 import React from 'react';
-import { supabase } from '../utils/supabase';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import { LoginModal } from './LoginModal';
 import { t } from '../i18n';
 
@@ -29,8 +29,8 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
 
   React.useEffect(() => {
     const checkAuth = async () => {
-      if (!supabase) return;
-      const { data: { session } } = await supabase.auth.getSession();
+      if (!supabase || !isSupabaseConfigured()) return;
+      const { data: { session } } = await (supabase as any).auth.getSession();
       if (session?.user?.email) {
         setUserEmail(session.user.email);
         setIsLoggedIn(true);
@@ -40,9 +40,9 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
   }, []);
 
   const handleLogout = async () => {
-    if (!supabase) return;
+    if (!supabase || !isSupabaseConfigured()) return;
     if (confirm('ログアウトしますか？')) {
-      await supabase.auth.signOut();
+      await (supabase as any).auth.signOut();
       window.location.reload();
     }
   };
@@ -470,16 +470,21 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
 
                     if (!doubleConfirm) return;
 
+                    if (!supabase || !isSupabaseConfigured()) {
+                      alert('クラウド同期が無効化されているため、アカウント削除は利用できません。');
+                      return;
+                    }
+
                     try {
                       // ユーザーIDを取得
-                      const { data: { user } } = await supabase.auth.getUser();
+                      const { data: { user } } = await (supabase as any).auth.getUser();
                       if (!user) {
                         alert('ユーザー情報の取得に失敗しました。');
                         return;
                       }
 
                       // クラウドデータを削除（Supabaseのobservationsテーブル）
-                      const { error: deleteError } = await supabase
+                      const { error: deleteError } = await (supabase as any)
                         .from('observations')
                         .delete()
                         .eq('user_id', user.id);
@@ -493,7 +498,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                       // アカウントを削除（Supabase Auth）
                       // 注: Supabase Authのユーザー削除はAdmin APIが必要なため、
                       // ここではサインアウトのみ行い、実際の削除はバックエンドで処理する必要があります
-                      await supabase.auth.signOut();
+                      await (supabase as any).auth.signOut();
 
                       // ローカルストレージをクリア
                       try {

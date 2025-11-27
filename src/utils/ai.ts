@@ -44,6 +44,15 @@ async function blobToBase64Webp(
   }
 }
 
+// モデルリストのキャッシュ（1回だけ取得）
+let cachedModels: Array<{ version: string; model: string }> | null = null;
+
+// キャッシュをクリアする関数（デバッグ用）
+export function clearModelCache() {
+  cachedModels = null;
+  console.log("[AI] Model cache cleared");
+}
+
 async function identifyWithGemini(image: Blob): Promise<Candidate[]> {
   const KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
   if (!KEY) throw new Error("NO_KEY");
@@ -92,51 +101,65 @@ async function identifyWithGemini(image: Blob): Promise<Candidate[]> {
   console.log("[AI] API Key (first 10 chars):", KEY.substring(0, 10) + "...");
   console.log("[AI] API Key length:", KEY.length);
 
-  // 利用可能なモデルのリストから動的に取得
+  // 利用可能なモデルのリストから動的に取得（キャッシュ使用）
   let modelConfigs: Array<{ version: string; model: string }> = [];
   
-  // まず利用可能なモデルを取得
-  try {
-    const listResp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${KEY}`
-    );
-    
-    if (listResp.ok) {
-      const listData = await listResp.json();
-      const availableModels = listData.models || [];
-      
-      console.log("[AI] Available models from API:", availableModels.map((m: any) => m.name));
-      
-      // generateContent をサポートするモデルのみフィルタ
-      const supportedModels = availableModels.filter((m: any) => 
-        m.supportedGenerationMethods?.includes('generateContent')
+  // キャッシュがあればそれを使用
+  if (cachedModels) {
+    console.log("[AI] Using cached model list");
+    modelConfigs = cachedModels;
+  } else {
+    // 初回のみモデルリストを取得
+    try {
+      console.log("[AI] Fetching model list (first time only)...");
+      const listResp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${KEY}`
       );
       
-      console.log("[AI] Models supporting generateContent:", supportedModels.map((m: any) => m.name));
-      
-      // モデル名から設定を作成（models/プレフィックスを除去）
-      modelConfigs = supportedModels
-        .map((m: any) => {
-          const fullName = m.name; // "models/gemini-1.5-flash" 形式
-          const modelName = fullName.replace('models/', '');
-          return { version: "v1beta", model: modelName };
-        })
-        .filter((c: any) => c.model.includes('flash') || c.model.includes('pro')); // flashまたはproモデルのみ
-      
-      console.log("[AI] Will try these models:", modelConfigs);
+      if (listResp.ok) {
+        const listData = await listResp.json();
+        const availableModels = listData.models || [];
+        
+        console.log("[AI] Available models from API:", availableModels.map((m: any) => m.name));
+        
+        // generateContent をサポートするモデルのみフィルタ
+        const supportedModels = availableModels.filter((m: any) => 
+          m.supportedGenerationMethods?.includes('generateContent')
+        );
+        
+        console.log("[AI] Models supporting generateContent:", supportedModels.map((m: any) => m.name));
+        
+        // モデル名から設定を作成（models/プレフィックスを除去）
+        modelConfigs = supportedModels
+          .map((m: any) => {
+            const fullName = m.name; // "models/gemini-1.5-flash" 形式
+            const modelName = fullName.replace('models/', '');
+            return { version: "v1beta", model: modelName };
+          })
+          .filter((c: any) => c.model.includes('flash') || c.model.includes('pro')); // flashまたはproモデルのみ
+        
+        // キャッシュに保存
+        cachedModels = modelConfigs;
+        console.log("[AI] Cached models for future use:", modelConfigs);
+      } else if (listResp.status === 429) {
+        console.warn("[AI] Rate limit exceeded (429). Using fallback models.");
+      }
+    } catch (e) {
+      console.warn("[AI] Could not fetch model list, using fallback models:", e);
     }
-  } catch (e) {
-    console.warn("[AI] Could not fetch model list, using fallback models:", e);
   }
   
   // フォールバック: モデルリストが取得できなかった場合
   if (modelConfigs.length === 0) {
     console.log("[AI] Using fallback model list");
     modelConfigs = [
+      { version: "v1beta", model: "gemini-2.0-flash-exp" },
+      { version: "v1beta", model: "gemini-1.5-flash-latest" },
       { version: "v1beta", model: "gemini-1.5-flash" },
-      { version: "v1beta", model: "gemini-1.5-pro" },
-      { version: "v1", model: "gemini-1.5-flash" },
+      { version: "v1beta", model: "gemini-1.5-pro-latest" },
     ];
+    // フォールバックもキャッシュ
+    cachedModels = modelConfigs;
   }
 
   let lastError: Error | null = null;
@@ -229,6 +252,11 @@ function mockIdentify(): Candidate[] {
       rationale: "薄橙～褐色の小型傘の特徴",
     },
   ];
+}
+
+// デバッグ用: windowオブジェクトに公開
+if (typeof window !== 'undefined') {
+  (window as any).clearAIModelCache = clearModelCache;
 }
 
 export async function identifyMushroom(image: Blob): Promise<Candidate[]> {
