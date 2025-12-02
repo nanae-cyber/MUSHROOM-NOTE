@@ -100,11 +100,18 @@ function fit(w: number, h: number, max: number) {
  */
 export async function extractExifData(blob: Blob): Promise<ExifData> {
   try {
+    console.log('[EXIF] Starting EXIF extraction, blob size:', blob.size, 'type:', blob.type);
+    
+    // GPS情報を含む全てのEXIFデータを取得
     const exif = await exifr.parse(blob, {
-      pick: ['DateTimeOriginal', 'CreateDate', 'ModifyDate', 'latitude', 'longitude'],
+      gps: true, // GPS情報を明示的に有効化
+      pick: ['DateTimeOriginal', 'CreateDate', 'ModifyDate', 'latitude', 'longitude', 'GPSLatitude', 'GPSLongitude'],
     });
     
+    console.log('[EXIF] Raw EXIF data:', exif);
+    
     if (!exif) {
+      console.log('[EXIF] No EXIF data found');
       return {};
     }
     
@@ -114,19 +121,26 @@ export async function extractExifData(blob: Blob): Promise<ExifData> {
     const dateTime = exif.DateTimeOriginal || exif.CreateDate || exif.ModifyDate;
     if (dateTime instanceof Date) {
       result.dateTime = dateTime;
+      console.log('[EXIF] Found date:', dateTime);
     }
     
-    // GPS座標を取得
-    if (exif.latitude && exif.longitude) {
+    // GPS座標を取得（複数のフィールドを試す）
+    const lat = exif.latitude || exif.GPSLatitude;
+    const lon = exif.longitude || exif.GPSLongitude;
+    
+    if (lat && lon && typeof lat === 'number' && typeof lon === 'number') {
       result.gps = {
-        lat: exif.latitude,
-        lon: exif.longitude,
+        lat: lat,
+        lon: lon,
       };
+      console.log('[EXIF] Found GPS:', result.gps);
+    } else {
+      console.log('[EXIF] No GPS data found. lat:', lat, 'lon:', lon);
     }
     
     return result;
   } catch (err) {
-    console.warn('[EXIF] Failed to extract EXIF data:', err);
+    console.error('[EXIF] Failed to extract EXIF data:', err);
     return {};
   }
 }

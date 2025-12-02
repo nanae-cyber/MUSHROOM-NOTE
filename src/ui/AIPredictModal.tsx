@@ -114,7 +114,58 @@ export default function AIPredictModal({ id, onClose }: Props) {
               }}
             />
           )}
-          {loading && <div>画像を解析中…</div>}
+          {loading && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '40px 20px',
+              gap: 20,
+            }}>
+              {/* アニメーション付きローディングスピナー */}
+              <div style={{
+                width: 60,
+                height: 60,
+                border: '4px solid #f3f4f6',
+                borderTop: '4px solid #667eea',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }} />
+              
+              {/* ローディングテキスト */}
+              <div style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: '#667eea',
+                animation: 'pulse 2s ease-in-out infinite',
+              }}>
+                🤖 AI判定中...
+              </div>
+              
+              <div style={{
+                fontSize: 13,
+                color: '#666',
+                textAlign: 'center',
+                lineHeight: 1.6,
+              }}>
+                画像を解析しています<br />
+                しばらくお待ちください
+              </div>
+              
+              {/* CSSアニメーション */}
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+                @keyframes pulse {
+                  0%, 100% { opacity: 1; }
+                  50% { opacity: 0.5; }
+                }
+              `}</style>
+            </div>
+          )}
           {err && <div style={{ color: "#ff8080" }}>エラー: {err}</div>}
           {!loading && !err && (
             <div style={{ display: "grid", gap: 12 }}>
