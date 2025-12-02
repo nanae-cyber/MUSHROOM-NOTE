@@ -291,28 +291,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* テスト用地図ボタン */}
-        <button
-          onClick={() => {
-            console.log('[TEST] Map button clicked!');
-            setShowFullscreenMap(true);
-          }}
-          style={{
-            padding: '12px 24px',
-            background: '#22c55e',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            fontSize: 16,
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginBottom: 16,
-            width: '100%',
-          }}
-        >
-          🗺️ 地図を開く（テスト）
-        </button>
-
         {/* サブナビゲーション */}
         <nav className="icon-menu" aria-label="main shortcuts" style={{ marginBottom: 16 }}>
           <button
@@ -388,7 +366,7 @@ export default function App() {
             <>
               <button
                 className={`icon-btn ${view === "stats" ? "active" : ""}`}
-                aria-label="統計"
+                aria-label={t("statistics")}
                 onClick={() => setView("stats")}
               >
                 <span className="icon" aria-hidden>
@@ -406,11 +384,11 @@ export default function App() {
                     <path d="M18 17V9M13 17V5M8 17v-3" />
                   </svg>
                 </span>
-                <span className="icon-label">統計</span>
+                <span className="icon-label">{t("statistics")}</span>
               </button>
               <button
                 className={`icon-btn ${view === "forecast" ? "active" : ""}`}
-                aria-label="きのこ予報"
+                aria-label={t("forecast")}
                 onClick={() => setView("forecast")}
               >
                 <span className="icon" aria-hidden>
@@ -428,7 +406,7 @@ export default function App() {
                     <circle cx="12" cy="12" r="5" />
                   </svg>
                 </span>
-                <span className="icon-label">予報</span>
+                <span className="icon-label">{t("forecast")}</span>
               </button>
             </>
           )}
@@ -452,12 +430,12 @@ export default function App() {
 
         {view === "stats" && isPremiumPlus && (
           <section style={{ display: "grid", gap: 12 }}>
-            <StatsView />
+            <StatsView lang={lang} />
           </section>
         )}
         {view === "forecast" && isPremiumPlus && (
           <section style={{ display: "grid", gap: 12 }}>
-            <MushroomForecast />
+            <MushroomForecast lang={lang} />
           </section>
         )}
 
@@ -505,10 +483,13 @@ export default function App() {
       {showFullscreenMap && (
         <>
           {console.log('[Map] Rendering FullscreenMap component')}
-          <FullscreenMap onClose={() => {
-            console.log('[Map] Closing fullscreen map');
-            setShowFullscreenMap(false);
-          }} />
+          <FullscreenMap 
+            lang={lang}
+            onClose={() => {
+              console.log('[Map] Closing fullscreen map');
+              setShowFullscreenMap(false);
+            }} 
+          />
         </>
       )}
     </ErrorBoundary>

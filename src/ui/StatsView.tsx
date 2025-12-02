@@ -1,8 +1,13 @@
 // src/ui/StatsView.tsx
 import React, { useEffect, useState } from 'react';
 import { db, type Row } from '../utils/db';
+import { t, type Lang } from '../i18n';
 
-export function StatsView() {
+interface StatsViewProps {
+  lang: Lang;
+}
+
+export function StatsView({ lang }: StatsViewProps) {
   const [items, setItems] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +23,7 @@ export function StatsView() {
     loadData();
   }, []);
 
-  if (loading) return <div style={{ padding: 20 }}>読み込み中...</div>;
+  if (loading) return <div style={{ padding: 20 }}>{t('loading_stats')}</div>;
 
   // 統計データを計算
   const totalCount = items.length;
@@ -67,16 +72,16 @@ export function StatsView() {
       {/* サマリー */}
       <div className="card" style={{ padding: 20 }}>
         <h2 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 600 }}>
-          📊 観察統計
+          📊 {t('stats_title')}
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
           <div style={{ textAlign: 'center', padding: 16, background: '#f9fafb', borderRadius: 8 }}>
             <div style={{ fontSize: 32, fontWeight: 700, color: '#667eea' }}>{totalCount}</div>
-            <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>総観察数</div>
+            <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>{t('total_records')}</div>
           </div>
           <div style={{ textAlign: 'center', padding: 16, background: '#f9fafb', borderRadius: 8 }}>
             <div style={{ fontSize: 32, fontWeight: 700, color: '#10b981' }}>{Object.keys(nameStats).length}</div>
-            <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>種類数</div>
+            <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>{lang === 'ja' ? '種類数' : 'Species'}</div>
           </div>
         </div>
       </div>
@@ -84,7 +89,7 @@ export function StatsView() {
       {/* 月別グラフ */}
       <div className="card" style={{ padding: 20 }}>
         <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 600 }}>
-          📈 月別観察数
+          📈 {t('monthly_trend')}
         </h3>
         <div style={{ display: 'grid', gap: 8 }}>
           {sortedMonths.map(([month, count]) => (
@@ -104,7 +109,7 @@ export function StatsView() {
                   }}
                 />
                 <div style={{ position: 'relative', padding: '0 12px', lineHeight: '32px', fontSize: 14, fontWeight: 600, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
-                  {count}回
+                  {count}{lang === 'ja' ? '回' : ''}
                 </div>
               </div>
             </div>
@@ -116,7 +121,7 @@ export function StatsView() {
       {topNames.length > 0 && (
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 600 }}>
-            🏆 よく観察したきのこ TOP5
+            🏆 {t('most_common')} TOP5
           </h3>
           <div style={{ display: 'grid', gap: 12 }}>
             {topNames.map(([name, count], index) => (
@@ -139,7 +144,7 @@ export function StatsView() {
                   <div style={{ fontWeight: 600, fontSize: 14 }}>{name}</div>
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#667eea' }}>
-                  {count}回
+                  {count}{lang === 'ja' ? '回' : ''}
                 </div>
               </div>
             ))}

@@ -27,7 +27,13 @@ interface ForecastData {
   bestDays: string[];
 }
 
-export function MushroomForecast() {
+import { t, type Lang } from '../i18n';
+
+interface MushroomForecastProps {
+  lang: Lang;
+}
+
+export function MushroomForecast({ lang }: MushroomForecastProps) {
   const [items, setItems] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [forecast, setForecast] = useState<ForecastData | null>(null);
@@ -181,7 +187,7 @@ export function MushroomForecast() {
     }
   };
 
-  if (loading) return <div style={{ padding: 20 }}>読み込み中...</div>;
+  if (loading) return <div style={{ padding: 20 }}>{t('loading_forecast')}</div>;
   if (!forecast) return null;
 
   const probabilityColor = {
@@ -191,9 +197,9 @@ export function MushroomForecast() {
   };
 
   const probabilityLabel = {
-    high: '高確率',
-    medium: '中確率',
-    low: '低確率',
+    high: t('probability_high'),
+    medium: t('probability_medium'),
+    low: t('probability_low'),
   };
 
   const probabilityIcon = {
@@ -208,7 +214,7 @@ export function MushroomForecast() {
       {!areasLoading && areas.length > 0 && (
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 600 }}>
-            📍 エリアを選択
+            📍 {t('select_area')}
           </h3>
           <div style={{ display: 'grid', gap: 8 }}>
             <button
@@ -262,7 +268,7 @@ export function MushroomForecast() {
       {/* きのこ予報 */}
       <div className="card" style={{ padding: 20 }}>
         <h2 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 600 }}>
-          🌦️ きのこ予報
+          🌦️ {t('forecast_title')}
           {selectedArea && (
             <span style={{ fontSize: 14, fontWeight: 400, color: '#666', marginLeft: 8 }}>
               - {selectedArea.name}
@@ -328,11 +334,11 @@ export function MushroomForecast() {
             marginBottom: 16,
           }}>
             <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 14 }}>
-              {getWeatherEmoji(currentWeather.icon)} 現在の天気
+              {getWeatherEmoji(currentWeather.icon)} {t('current_weather')}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 13, color: '#666' }}>
-              <div>気温: {currentWeather.temp}°C</div>
-              <div>湿度: {currentWeather.humidity}%</div>
+              <div>{t('temperature')}: {currentWeather.temp}°C</div>
+              <div>{t('humidity')}: {currentWeather.humidity}%</div>
               <div>{currentWeather.description}</div>
             </div>
             {currentWeather.humidity > 70 && (
@@ -495,8 +501,7 @@ export function MushroomForecast() {
           ⚠️ 注意事項
         </div>
         <div style={{ fontSize: 13, lineHeight: 1.6, color: '#666' }}>
-          きのこ予報は過去のデータに基づく参考情報です。実際の発生状況は天候や環境により異なります。
-          採取したきのこの食毒判定は必ず専門家に確認してください。
+          {t('forecast_disclaimer')}
         </div>
       </div>
     </div>

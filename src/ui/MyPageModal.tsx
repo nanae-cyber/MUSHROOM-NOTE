@@ -2,7 +2,7 @@
 import React from 'react';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import { LoginModal } from './LoginModal';
-import { t } from '../i18n';
+import { t, type Lang } from '../i18n';
 
 interface MyPageModalProps {
   onClose: () => void;
@@ -117,7 +117,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
           {/* アカウント */}
           {(isPremium || isPremiumPlus) && (
             <div style={{ marginBottom: 24 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>アカウント</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{t('account_section')}</h3>
               <div style={{ display: 'grid', gap: 8 }}>
                 {isLoggedIn ? (
                   <>
@@ -142,7 +142,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                         fontSize: 14,
                       }}
                     >
-                      🚪 ログアウト
+                      🚪 {t('logout_button')}
                     </button>
                   </>
                 ) : (
@@ -155,7 +155,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                       fontSize: 13,
                       lineHeight: 1.5,
                     }}>
-                      ログインすると、クラウド同期機能が利用できます
+                      {t('login_to_sync_message')}
                     </div>
                     <button
                       onClick={() => setShowLogin(true)}
@@ -171,7 +171,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                         fontWeight: 600,
                       }}
                     >
-                      ログイン / アカウント作成
+                      {t('login_signup_button')}
                     </button>
                   </>
                 )}
@@ -181,7 +181,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
 
           {/* プラン */}
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>現在のプラン</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{t('current_plan_section')}</h3>
             {isPremiumPlus ? (
               <>
                 <div style={{
@@ -215,8 +215,27 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                       fontWeight: 500,
                     }}
                   >
-                    プランを変更・解約
+                    {t('change_plan_button')}
                   </button>
+                  <a
+                    href="/plans.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: 8,
+                      border: '1px solid #e5e7eb',
+                      background: '#fff',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      color: '#666',
+                      textDecoration: 'none',
+                      display: 'block',
+                    }}
+                  >
+                    {t('view_plan_comparison')}
+                  </a>
                 </div>
               </>
             ) : isPremium ? (
@@ -260,7 +279,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                       fontWeight: 600,
                     }}
                   >
-                    💎 プレミアムプラスにアップグレード
+                    {t('upgrade_to_premium_plus_button')}
                   </button>
                   <button
                     onClick={() => {
@@ -279,8 +298,27 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                       color: '#dc2626',
                     }}
                   >
-                    解約する
+                    {t('cancel_plan_button')}
                   </button>
+                  <a
+                    href="/plans.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: 8,
+                      border: '1px solid #e5e7eb',
+                      background: '#fff',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      color: '#666',
+                      textDecoration: 'none',
+                      display: 'block',
+                    }}
+                  >
+                    {t('view_plan_comparison')}
+                  </a>
                 </div>
               </>
             ) : (
@@ -299,33 +337,54 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                     AI推定: 月5回 / クラウド同期: なし / ローカル保存: 無制限
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    onClose();
-                    onShowPaywall();
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: '#fff',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  プレミアムプランに登録
-                </button>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onShowPaywall();
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: '#fff',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {t('premium_plan_button')}
+                  </button>
+                  <a
+                    href="/plans.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: 8,
+                      border: '1px solid #e5e7eb',
+                      background: '#fff',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      color: '#666',
+                      textDecoration: 'none',
+                      display: 'block',
+                    }}
+                  >
+                    {t('view_plan_comparison')}
+                  </a>
+                </div>
               </>
             )}
           </div>
 
           {/* 設定 */}
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>設定</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{t('settings_section')}</h3>
             <div style={{ display: 'grid', gap: 8 }}>
               <button
                 onClick={() => {
@@ -344,7 +403,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                   alignItems: 'center',
                 }}
               >
-                <span>🌐 言語</span>
+                <span>🌐 {t('language_setting')}</span>
                 <span style={{ color: '#666' }}>{lang === 'ja' ? '日本語' : 'English'}</span>
               </button>
             </div>
@@ -353,7 +412,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
           {/* 機能 */}
           {isPremiumPlus && (
             <div style={{ marginBottom: 24 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>機能</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{t('features_section')}</h3>
               <div style={{ display: 'grid', gap: 8 }}>
                 <button
                   onClick={() => {
@@ -372,7 +431,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                     fontSize: 14,
                   }}
                 >
-                  📊 観察データの統計表示
+                  📊 {t('statistics_feature')}
                 </button>
                 <button
                   onClick={() => {
@@ -391,7 +450,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                     fontSize: 14,
                   }}
                 >
-                  🌦️ きのこ予報
+                  🌦️ {t('forecast_feature')}
                 </button>
               </div>
             </div>
@@ -399,7 +458,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
 
           {/* サポート */}
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>サポート</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{t('support_section')}</h3>
             <div style={{ display: 'grid', gap: 8 }}>
               <button
                 onClick={() => {
@@ -416,7 +475,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                   fontSize: 14,
                 }}
               >
-                📧 お問い合わせ
+                📧 {t('contact_us_button')}
               </button>
               <a
                 href="/legal.html"
@@ -433,7 +492,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                   display: 'block',
                 }}
               >
-                📄 利用規約・プライバシー
+                📄 {t('terms_privacy_link')}
               </a>
             </div>
           </div>
@@ -441,7 +500,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
           {/* アカウント削除 */}
           {isLoggedIn && (
             <div style={{ marginBottom: 24 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#dc2626' }}>アカウント削除</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#dc2626' }}>{t('delete_account_section')}</h3>
               <div style={{ display: 'grid', gap: 8 }}>
                 <button
                   onClick={async () => {
@@ -530,7 +589,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                     color: '#dc2626',
                   }}
                 >
-                  🗑️ アカウントを削除
+                  🗑️ {t('delete_account_button')}
                 </button>
               </div>
             </div>
@@ -538,7 +597,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
 
           {/* ローカルデータ削除 */}
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#ea580c' }}>データ削除</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#ea580c' }}>{t('delete_data_section')}</h3>
             <div style={{ display: 'grid', gap: 8 }}>
               <button
                 onClick={async () => {
@@ -602,7 +661,7 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                   width: '100%',
                 }}
               >
-                🗑️ 登録した全データを削除
+                🗑️ {t('delete_all_data_button')}
               </button>
             </div>
           </div>

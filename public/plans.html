@@ -241,10 +241,23 @@ th {
 </head>
 <body>
 <div class="container">
-<a href="/" class="back-link">← トップに戻る</a>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+  <a href="/" class="back-link">← <span data-i18n="back_to_top">トップに戻る</span></a>
+  <button id="lang-toggle" style="
+    padding: 8px 16px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+  ">
+    🌐 <span id="lang-label">English</span>
+  </button>
+</div>
 
-<h1>プラン比較</h1>
-<p class="subtitle">あなたに最適なプランを選択してください</p>
+<h1 data-i18n="plan_comparison_title">プラン比較</h1>
+<p class="subtitle" data-i18n="plan_comparison_subtitle">あなたに最適なプランを選択してください</p>
 
 <div class="plans">
   <!-- 無料プラン -->
@@ -597,5 +610,65 @@ th {
 </div>
 
 </div>
+
+<script>
+// 翻訳データ
+const translations = {
+  ja: {
+    back_to_top: 'トップに戻る',
+    plan_comparison_title: 'プラン比較',
+    plan_comparison_subtitle: 'あなたに最適なプランを選択してください',
+    free_plan: '無料プラン',
+    premium_plan: 'プレミアム',
+    premium_plus_plan: 'プレミアムプラス',
+    per_month: '月額',
+    forever_free: '永久無料',
+    start_now: '今すぐ始める',
+  },
+  en: {
+    back_to_top: 'Back to Top',
+    plan_comparison_title: 'Plan Comparison',
+    plan_comparison_subtitle: 'Choose the plan that suits you best',
+    free_plan: 'Free Plan',
+    premium_plan: 'Premium',
+    premium_plus_plan: 'Premium Plus',
+    per_month: 'per month',
+    forever_free: 'Forever Free',
+    start_now: 'Get Started',
+  }
+};
+
+// 現在の言語を取得（localStorageから）
+let currentLang = localStorage.getItem('lang') || 'ja';
+
+// 言語を適用
+function applyLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  
+  // data-i18n属性を持つ要素を翻訳
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (translations[lang] && translations[lang][key]) {
+      el.textContent = translations[lang][key];
+    }
+  });
+  
+  // 言語ラベルを更新
+  document.getElementById('lang-label').textContent = lang === 'ja' ? 'English' : '日本語';
+  
+  // HTMLのlang属性を更新
+  document.documentElement.lang = lang;
+}
+
+// 言語切り替えボタン
+document.getElementById('lang-toggle').addEventListener('click', () => {
+  const newLang = currentLang === 'ja' ? 'en' : 'ja';
+  applyLanguage(newLang);
+});
+
+// 初期化
+applyLanguage(currentLang);
+</script>
 </body>
 </html>

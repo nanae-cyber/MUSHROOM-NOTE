@@ -297,7 +297,7 @@ export async function identifyMushroom(image: Blob): Promise<Candidate[]> {
         errorMsg +=
           "\n\nモデルが見つかりません。\n\n詳細: " + e.message + "\n\nブラウザのコンソール（F12キー）で詳細なログを確認してください。";
       } else if (e.message.includes("HTTP 403")) {
-        errorMsg += "\n\nAPIキーが無効です。正しいキーを設定してください。";
+        errorMsg += "\n\nAPIキーが無効です。\n\n考えられる原因:\n1. APIキーが間違っている\n2. APIキーの権限が不足している\n3. Gemini APIが有効化されていない\n\n対処方法:\n1. Google AI Studioで新しいAPIキーを作成\n2. .env.localファイルを確認\n3. ブラウザのコンソール（F12）で詳細を確認";
       } else if (e.message.includes("HTTP 429")) {
         errorMsg +=
           "\n\nAPIの利用制限に達しました。しばらく待ってから再試行してください。";

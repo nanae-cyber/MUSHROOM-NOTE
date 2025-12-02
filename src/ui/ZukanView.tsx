@@ -639,12 +639,12 @@ export function ZukanView() {
                     const gps = (previewRow as any).meta?.gps;
                     if (gps?.lat && gps?.lon) {
                       sections.push({
-                        title: "📍 GPS情報",
+                        title: "📍 位置情報",
                         items: [
                           { 
                             label: "座標", 
                             value: `${gps.lat.toFixed(6)}, ${gps.lon.toFixed(6)}`,
-                            memo: "map-link"
+                            isGPS: true
                           }
                         ],
                       });
@@ -781,7 +781,7 @@ export function ZukanView() {
                                           {t("weird_shape_mushroom")}
                                         </span>
                                       </div>
-                                    ) : item.memo === "map-link" ? (
+                                    ) : (item as any).isGPS ? (
                                       <button
                                         onClick={() => {
                                           const gps = (previewRow as any).meta?.gps;
