@@ -135,14 +135,26 @@ export default function CameraCapture({ mode }: { mode?: "camera" | "album" | nu
       const exifData = await extractExifData(file);
       console.log("📸 EXIF data:", exifData);
 
-      // ③ 位置・方位（取れなくても続行）
-      const [pos, heading] = await Promise.all([
-        getPosition(),
-        getHeading(),
-      ]);
+      // ③ GPS情報の決定
+      let gps: any = undefined;
       
-      // EXIF GPSがあればそれを優先、なければ現在位置
-      const gps = exifData.gps || (pos as any);
+      if (exifData.gps) {
+        // EXIFにGPS情報がある場合はそれを使用（撮影場所）
+        console.log("📍 Using GPS from EXIF (photo location):", exifData.gps);
+        gps = exifData.gps;
+      } else if (source === "camera") {
+        // カメラ撮影の場合のみ現在位置を取得
+        console.log("📍 No EXIF GPS, getting current location (camera mode)");
+        const pos = await getPosition();
+        gps = pos;
+      } else {
+        // アルバムから選択した画像でEXIFにGPSがない場合は記録しない
+        console.log("📍 No EXIF GPS and album mode, GPS will not be recorded");
+        gps = undefined;
+      }
+      
+      // 方位情報を取得（カメラ撮影時のみ）
+      const heading = source === "camera" ? await getHeading() : undefined;
       
       // EXIF撮影日時があればそれを使用、なければ現在時刻
       const capturedAt = exifData.dateTime ? exifData.dateTime.getTime() : Date.now();
@@ -152,7 +164,7 @@ export default function CameraCapture({ mode }: { mode?: "camera" | "album" | nu
         firstPhoto: jpeg,
         view: "cap",
         meta: { 
-          gps: gps.lat && gps.lon ? { lat: gps.lat, lon: gps.lon } : undefined,
+          gps: gps?.lat && gps?.lon ? { lat: gps.lat, lon: gps.lon } : undefined,
           heading, 
           capturedAt, 
           source 
