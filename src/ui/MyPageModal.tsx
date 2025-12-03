@@ -600,7 +600,8 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#ea580c' }}>{t('delete_data_section')}</h3>
             <div style={{ display: 'grid', gap: 8 }}>
               <button
-                onClick={async () => {
+                onClick={async (e) => {
+                    e.stopPropagation(); // イベントの伝播を止める
                     const confirmed = confirm(
                       '⚠️ 登録した全データを削除しますか？\n\n' +
                       'この操作は取り消せません。以下のデータがすべて削除されます：\n' +
