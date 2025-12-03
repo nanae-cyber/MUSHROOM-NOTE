@@ -1,12 +1,32 @@
 // src/utils/supabase.ts
-// Supabaseを完全に無効化（オフライン優先アプリのため）
+import { createClient } from '@supabase/supabase-js';
 
-console.log('[Supabase] Disabled - using offline-first mode');
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Supabaseクライアントは無効（型定義のみ）
-export const supabase: null = null;
+console.log('[Supabase] Initializing...');
+console.log('[Supabase] URL configured:', !!supabaseUrl);
+console.log('[Supabase] Key configured:', !!supabaseAnonKey);
+
+// Supabaseクライアントの初期化
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    })
+  : null;
 
 // Supabaseが設定されているかチェック
 export const isSupabaseConfigured = () => {
-  return false; // 常にfalse
+  const configured = !!(supabaseUrl && supabaseAnonKey && supabase);
+  console.log('[Supabase] Configuration check:', configured);
+  return configured;
 };
+
+if (supabase) {
+  console.log('[Supabase] Client initialized successfully');
+} else {
+  console.warn('[Supabase] Client not initialized - cloud sync disabled');
+}
