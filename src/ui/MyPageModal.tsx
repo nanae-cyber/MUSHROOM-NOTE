@@ -600,8 +600,13 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#ea580c' }}>{t('delete_data_section')}</h3>
             <div style={{ display: 'grid', gap: 8 }}>
               <button
+                type="button"
                 onClick={async (e) => {
-                    e.stopPropagation(); // イベントの伝播を止める
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    console.log('[Delete] Button clicked');
+                    
                     const confirmed = confirm(
                       '⚠️ 登録した全データを削除しますか？\n\n' +
                       'この操作は取り消せません。以下のデータがすべて削除されます：\n' +
@@ -623,11 +628,13 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                     if (!doubleConfirm) return;
 
                     try {
+                      console.log('[Delete] Starting database deletion...');
                       // IndexedDBを削除
                       const dbName = 'mushroom-note';
                       const deleteRequest = indexedDB.deleteDatabase(dbName);
                       
                       deleteRequest.onsuccess = () => {
+                        console.log('[Delete] Database deleted successfully');
                         alert(
                           'すべてのローカルデータを削除しました。\n\n' +
                           'ページをリロードします。'
@@ -635,18 +642,20 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                         window.location.reload();
                       };
 
-                      deleteRequest.onerror = () => {
+                      deleteRequest.onerror = (e) => {
+                        console.error('[Delete] Database deletion error:', e);
                         alert('データの削除に失敗しました。');
                       };
 
                       deleteRequest.onblocked = () => {
+                        console.warn('[Delete] Database deletion blocked');
                         alert(
                           'データベースが使用中のため削除できません。\n' +
                           'すべてのタブを閉じてから再度お試しください。'
                         );
                       };
                     } catch (err: any) {
-                      console.error('データ削除エラー:', err);
+                      console.error('[Delete] データ削除エラー:', err);
                       alert('データ削除に失敗しました: ' + (err?.message || String(err)));
                     }
                   }}
@@ -655,11 +664,12 @@ export function MyPageModal({ onClose, onShowContact, onShowPaywall, isPremium, 
                   borderRadius: 8,
                   border: '1px solid #ea580c',
                   background: '#fff',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   cursor: 'pointer',
                   fontSize: 14,
                   color: '#ea580c',
                   width: '100%',
+                  fontWeight: 600,
                 }}
               >
                 🗑️ {t('delete_all_data_button')}

@@ -1,6 +1,6 @@
 // src/ui/LoginModal.tsx
 import React, { useState } from 'react';
-import { supabase } from '../utils/supabase';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 export function LoginModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [email, setEmail] = useState('');
