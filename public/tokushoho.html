@@ -88,6 +88,11 @@
       border-radius: 4px;
       font-size: 14px;
     }
+    ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+      color: #555;
+    }
     @media (max-width: 600px) {
       .container {
         padding: 20px;
@@ -119,8 +124,8 @@
     <div class="info-row">
       <div class="info-label">所在地</div>
       <div class="info-value">
-        Available upon request.<br>
-        Please contact us via the inquiry form.
+        請求があった場合には遅滞なく開示いたします。<br>
+        アプリ内のお問い合わせフォームよりご連絡ください。
       </div>
     </div>
 
@@ -132,14 +137,25 @@
     <div class="info-row">
       <div class="info-label">電話番号</div>
       <div class="info-value">
-        Available upon request.<br>
-        Please contact us via the inquiry form.
+        請求があった場合には遅滞なく開示いたします。<br>
+        アプリ内のお問い合わせフォームよりご連絡ください。
       </div>
     </div>
 
     <div class="info-row">
       <div class="info-label">メールアドレス</div>
-      <div class="info-value">Please use the inquiry form in the app</div>
+      <div class="info-value">
+        請求があった場合には遅滞なく開示いたします。<br>
+        アプリ内のお問い合わせフォームよりご連絡ください。
+      </div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-label">お問い合わせ方法</div>
+      <div class="info-value">
+        アプリ内の「お問い合わせ」フォームをご利用ください。<br>
+        ※お問い合わせへの回答には2-3営業日いただく場合がございます。
+      </div>
     </div>
 
     <div class="info-row">
@@ -152,14 +168,14 @@
       <div class="info-label">プレミアムプラン</div>
       <div class="info-value">
         月額: 200円（税込）<br>
-        AI推定: 月30回 / クラウド同期: 最大100枚
+        <span style="font-size: 13px; opacity: 0.8;">AI推定: 月30回 / クラウド同期: 最大100枚</span>
       </div>
     </div>
     <div class="info-row">
       <div class="info-label">プレミアムプラスプラン</div>
       <div class="info-value">
         月額: 500円（税込）<br>
-        AI推定: 無制限 / クラウド同期: 最大1,000枚/月
+        <span style="font-size: 13px; opacity: 0.8;">AI推定: 無制限 / クラウド同期: 最大1,000枚/月</span>
       </div>
     </div>
 
@@ -170,43 +186,81 @@
     <h2>支払時期</h2>
     <p>サービス申込時に決済が行われます。</p>
     <p>月額プラン: 毎月の契約更新日に自動決済されます。</p>
+    <p>※初回申込時から1ヶ月ごとに自動更新されます。</p>
 
     <h2>サービス提供時期</h2>
     <p>決済完了後、即時にプレミアム機能がご利用いただけます。</p>
+    <p>※システムメンテナンス等により一時的にサービスを停止する場合がございます。</p>
 
     <h2>返品・キャンセルについて</h2>
     <p>デジタルコンテンツの性質上、サービス提供開始後の返金・返品はお受けできません。</p>
     <p>ただし、以下の場合は返金対応いたします：</p>
-    <ul style="margin-left: 20px; margin-bottom: 15px; color: #555;">
-      <li>システム障害により長期間（7日以上）サービスが利用できなかった場合</li>
+    <ul>
+      <li>システム障害により長期間（7日以上連続）サービスが利用できなかった場合</li>
       <li>二重課金などの決済エラーが発生した場合</li>
       <li>その他、当方の責に帰すべき事由により正常にサービスを提供できなかった場合</li>
     </ul>
+    <p>返金をご希望の場合は、アプリ内のお問い合わせフォームよりご連絡ください。</p>
 
     <h2>解約について</h2>
     <p>マイページからいつでも解約可能です。</p>
-    <p>解約後も契約期間終了まではプレミアム機能をご利用いただけます。</p>
-    <p>自動更新を停止したい場合は、次回更新日の前日までに解約手続きを完了してください。</p>
     <p>解約手続き完了後、次回更新日以降は課金されません。</p>
+    <p>解約後も契約期間終了まではプレミアム機能をご利用いただけます。</p>
+    <p>※解約手続きは次回更新日の前日までに完了してください。</p>
 
     <h2>動作環境</h2>
     <p>以下のブラウザでの動作を推奨します：</p>
-    <ul style="margin-left: 20px; margin-bottom: 15px; color: #555;">
+    <ul>
       <li>Google Chrome（最新版）</li>
       <li>Safari（最新版、iOS 14以降）</li>
       <li>Microsoft Edge（最新版）</li>
       <li>Firefox（最新版）</li>
     </ul>
-    <p style="font-size: 14px; color: #666;">※ 推奨環境以外でのご利用は、一部機能が正常に動作しない場合がございます。</p>
+    <p style="font-size: 14px; color: #666;">※推奨環境以外でのご利用は、一部機能が正常に動作しない場合がございます。</p>
+
+    <h2>サービス内容</h2>
+    <p><strong>無料プラン:</strong></p>
+    <ul>
+      <li>写真撮影・保存（無制限）</li>
+      <li>位置情報・方位の記録</li>
+      <li>詳細メモの記録</li>
+      <li>オフライン動作</li>
+      <li>カレンダー表示</li>
+      <li>検索機能</li>
+      <li>AI推定: 月5回</li>
+    </ul>
+
+    <p><strong>プレミアムプラン（月額200円）:</strong></p>
+    <ul>
+      <li>無料プランの全機能</li>
+      <li>AI推定: 月30回</li>
+      <li>クラウド同期: 最大100枚</li>
+      <li>複数デバイス対応</li>
+    </ul>
+
+    <p><strong>プレミアムプラスプラン（月額500円）:</strong></p>
+    <ul>
+      <li>プレミアムプランの全機能</li>
+      <li>AI推定: 無制限</li>
+      <li>クラウド同期: 最大1,000枚/月</li>
+      <li>詳細な統計表示</li>
+      <li>きのこ予報機能</li>
+    </ul>
 
     <h2>お問い合わせ</h2>
     <p>サービスに関するお問い合わせは、アプリ内の「お問い合わせ」フォームよりご連絡ください。</p>
+    <p>営業時間: 平日 10:00-18:00（土日祝日を除く）</p>
     <p>※お問い合わせへの回答には2-3営業日いただく場合がございます。</p>
 
     <h2>免責事項</h2>
     <p>本サービスで提供されるAIによるきのこの識別結果は参考情報であり、正確性を保証するものではありません。</p>
     <p>きのこの採取・食用については、必ず専門家の判断を仰いでください。</p>
     <p>本サービスの利用により生じた損害について、当方は一切の責任を負いかねます。</p>
+    <p>毒きのこの誤食による健康被害等については、当方は責任を負いません。</p>
+
+    <h2>その他</h2>
+    <p>本サービスは予告なく内容を変更または終了する場合がございます。</p>
+    <p>サービス終了の際は、1ヶ月前までにアプリ内でお知らせいたします。</p>
 
     <div class="note" style="margin-top: 30px;">
       <strong>個人情報の取り扱いについて</strong><br>
@@ -214,7 +268,7 @@
     </div>
 
     <p style="text-align: right; margin-top: 30px; color: #666; font-size: 14px;">
-      最終更新日: 2024年12月2日
+      最終更新日: 2024年12月3日
     </p>
 
     <a href="/" class="back-link">← トップページに戻る</a>

@@ -91,9 +91,34 @@ export function MushroomForecast({ lang }: MushroomForecastProps) {
     loadData();
   }, []);
   
-  // エリアが変更されたら予報を再計算
+  // エリアが変更されたら天気を取得
   useEffect(() => {
-    if (items.length > 0 && selectedArea) {
+    if (!selectedArea) return;
+    
+    const fetchWeatherForArea = async () => {
+      setWeatherLoading(true);
+      try {
+        const [weather, forecast] = await Promise.all([
+          getCurrentWeather(selectedArea.center.lat, selectedArea.center.lon),
+          getWeatherForecast(selectedArea.center.lat, selectedArea.center.lon),
+        ]);
+        setCurrentWeather(weather);
+        setWeatherForecast(forecast);
+      } catch (err) {
+        console.error('[Forecast] Failed to fetch weather for area:', err);
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+    
+    fetchWeatherForArea();
+  }, [selectedArea]); // selectedAreaのみに依存
+  
+  // 天気データが更新されたら予報を再計算
+  useEffect(() => {
+    if (items.length === 0) return;
+    
+    if (selectedArea) {
       const areaItems = items.filter(item => {
         const gps = (item.meta as any)?.gps;
         if (!gps?.lat || !gps?.lon) return false;
@@ -102,22 +127,12 @@ export function MushroomForecast({ lang }: MushroomForecastProps) {
       
       const forecastData = calculateForecast(areaItems, currentWeather, weatherForecast);
       setForecast(forecastData);
-      
-      // エリアの中心位置の天気を取得
-      if (selectedArea) {
-        getCurrentWeather(selectedArea.center.lat, selectedArea.center.lon).then(weather => {
-          setCurrentWeather(weather);
-        });
-        getWeatherForecast(selectedArea.center.lat, selectedArea.center.lon).then(forecast => {
-          setWeatherForecast(forecast);
-        });
-      }
-    } else if (items.length > 0) {
+    } else {
       // エリアが選択されていない場合は全データで予報
       const forecastData = calculateForecast(items, currentWeather, weatherForecast);
       setForecast(forecastData);
     }
-  }, [selectedArea, items, currentWeather, weatherForecast]);
+  }, [items, selectedArea, currentWeather, weatherForecast]);
 
   const calculateForecast = (
     data: Row[],

@@ -12,6 +12,7 @@ export default function AIPredictModal({ id, onClose }: Props) {
   const [cands, setCands] = useState<Cand[]>([]);
   const [thumbUrl, setThumbUrl] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [resultSaved, setResultSaved] = useState(false); // 結果が保存されたかどうか
 
   useEffect(() => {
     let revoked = false;
@@ -52,9 +53,32 @@ export default function AIPredictModal({ id, onClose }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // 閉じる時の確認処理
+  const handleClose = () => {
+    // ローディング中、エラー時、または結果が保存済みの場合はそのまま閉じる
+    if (loading || err || resultSaved) {
+      onClose();
+      return;
+    }
+
+    // AI判定結果があり、まだ保存していない場合は確認
+    if (cands.length > 0) {
+      const confirmed = confirm(
+        'AI判定結果を保存せずに閉じますか？\n\n' +
+        '結果を保存しない場合、判定内容は失われます。\n' +
+        '個別の候補を保存するか、「結果をすべて保存」ボタンで保存できます。'
+      );
+      if (!confirmed) {
+        return; // キャンセルされた場合は閉じない
+      }
+    }
+
+    onClose();
+  };
+
   return (
     <div
-      onClick={onClose}
+      onClick={handleClose}
       style={{
         position: "fixed",
         inset: 0,
@@ -89,7 +113,7 @@ export default function AIPredictModal({ id, onClose }: Props) {
         >
           <h3 style={{ margin: 0 }}>{t("ai_prediction")}</h3>
           <div style={{ marginLeft: "auto" }}>
-            <button className="btn-outline" onClick={onClose}>
+            <button className="btn-outline" onClick={handleClose}>
               {t("close")}
             </button>
           </div>
@@ -216,6 +240,7 @@ export default function AIPredictModal({ id, onClose }: Props) {
                             },
                           },
                         });
+                        setResultSaved(true); // 保存済みフラグを立てる
                         alert(`「${c.name}」${t("saved_to_mushroom_name")}`);
                         onClose();
                         location.reload();
@@ -294,6 +319,7 @@ export default function AIPredictModal({ id, onClose }: Props) {
                       },
                     },
                   });
+                  setResultSaved(true); // 保存済みフラグを立てる
                   alert(t("ai_results_saved"));
                   onClose();
                   location.reload();
